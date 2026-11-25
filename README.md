@@ -1,26 +1,32 @@
 # Reker SolAI
 
-**Solar Asset Intelligence & Carbon MRV for Telangana**
+**Substation-first Solar Geospatial Intelligence, with Generation MRV and Carbon Impact Tracking — Telangana**
 
-Reker SolAI is a climate-infrastructure intelligence and measurement, reporting and verification (MRV) platform focused on quantifying renewable electricity generation and tracking the evidence needed to assess carbon-credit potential from solar projects associated with substations and the wider electricity network in Telangana.
+Reker SolAI is a climate-infrastructure intelligence platform that helps utilities and renewable-energy developers discover, assess and rank solar deployment opportunities around substations across Telangana. It combines geospatial data, land and terrain constraints, water/flood context, solar-resource inputs and grid-infrastructure proximity to support better site-screening and project-planning decisions.
 
-## Objective
+Generation MRV and carbon accounting extend this same workflow after a candidate site becomes a developed and operating solar project. MRV does not replace the geospatial product.
 
-Help solar project developers, asset owners, utilities and climate stakeholders answer four questions:
+## Problem statement
 
-1. Where are existing and potential solar assets in Telangana, and how are they spatially related to substations and grid infrastructure?
-2. How much renewable electricity is actually generated and delivered, based on reliable meter and operational data?
-3. What emissions are avoided compared with a documented grid-electricity baseline?
-4. Which projects may qualify for carbon-credit issuance under an applicable methodology, and what monitoring evidence, safeguards and third-party validation are required?
+Solar developers and utility teams often assess land availability, terrain, water constraints, proximity to substations, grid access, evacuation feasibility and project economics using fragmented datasets and manual analysis. This slows site discovery and makes candidate-site comparisons difficult.
 
-SolAI aims to make solar generation and its climate impact measurable, traceable and auditable—not simply map solar potential.
+**SolAI turns those fragmented inputs into a traceable, map-led decision workflow:** identify candidate land, screen constraints, assess substation context, estimate potential capacity and yield, rank sites for detailed feasibility, and then follow selected projects through generation monitoring and climate-impact reporting.
+
+## What decisions SolAI supports
+
+1. Where is potentially suitable land around mapped substations and grid infrastructure?
+2. What do land use, water bodies, waterways, terrain, slope, shading, flood exposure and protected-area constraints indicate?
+3. Which candidate sites should be prioritised for detailed field and engineering assessment?
+4. What indicative solar capacity and annual generation could a screened site support under stated assumptions?
+5. What official utility data is still needed to confirm feeder connectivity, hosting capacity, evacuation requirements and cost?
+6. Once operational, how much renewable electricity is actually generated/exported, what emissions impact can be estimated under an applicable methodology, and what evidence is needed for independent verification?
 
 ## What SolAI builds
 
-- **Solar and substation intelligence:** geospatial inventory of solar installations, substations and relevant infrastructure using open data and verified asset records.
-- **Generation MRV:** ingest inverter, generation-meter and export-meter data; validate time series, meter identity, gaps, anomalies and reconciliation.
-- **Emissions accounting:** calculate net renewable electricity supplied and estimated avoided grid emissions using a documented, applicable baseline and emission factor.
-- **Carbon-credit readiness:** map project evidence to the requirements of an applicable carbon-crediting methodology, including additionality, project boundary, baseline, monitoring, ownership, safeguards and double-counting checks.
+- **Substation-first geospatial intelligence:** map substations and grid context; organise land, water, roads, terrain, land-cover and constraint layers; screen candidate parcels around infrastructure.
+- **Candidate-site ranking and solar planning:** rank sites using land availability, shading, slope, flood safety and grid proximity; estimate capacity and yield from explicit planning assumptions.
+- **Generation MRV extension:** after project development, ingest inverter, generation-meter and export-meter data; validate time series, meter identity, gaps, anomalies and reconciliation.
+- **Emissions accounting and carbon-credit readiness:** assess eligible electricity and potential avoided emissions against a documented methodology, including baseline, monitoring, ownership, safeguards and double-counting checks.
 - **Audit trail:** preserve source records, timestamps, methodology versions, calculations, review status and cryptographic integrity checks.
 
 ## Telangana focus
@@ -71,7 +77,7 @@ Current demo endpoints:
 - `POST /api/v1/projects/{project_id}/meter-readings`
 - `POST /api/v1/projects/{project_id}/meter-csv`
 - `GET /api/v1/projects/{project_id}/meter-readings`
-- `POST /api/v1/projects/{project_id}/mrv`
+- `POST /api/v1/sites/score`\n- `POST /api/v1/solar/potential`\n- `POST /api/v1/projects/{project_id}/mrv`
 - `GET /api/v1/projects/{project_id}/audit`
 - `GET /api/v1/map/layers`
 
@@ -87,4 +93,4 @@ Current demo endpoints:
 - SolAI must label estimated reductions, methodology-screened potential, validated reductions and issued credits as distinct statuses.
 - Independent validation and verification, registry approval and issuance are performed by the relevant authorised bodies—not by SolAI.
 
-See [docs/METHODOLOGY.md](docs/METHODOLOGY.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/CARBON_MRV_FRAMEWORK.md](docs/CARBON_MRV_FRAMEWORK.md).
+See [docs/TERRALAB_DATA_REGISTER.md](docs/TERRALAB_DATA_REGISTER.md) for the initial geospatial extract, substation sources and Telangana expansion requirements. See [docs/METHODOLOGY.md](docs/METHODOLOGY.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/CARBON_MRV_FRAMEWORK.md](docs/CARBON_MRV_FRAMEWORK.md).
