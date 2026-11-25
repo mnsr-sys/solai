@@ -117,7 +117,7 @@
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const API=(window.SOLAI_API_URL||'https://reker-solai-api.vercel.app').replace(/\/$/,'');
+const API=(window.SOLAI_API_URL||(location.hostname==='reker-solai.vercel.app'?'https://reker-solai-api.vercel.app':window.location.origin)).replace(/\/$/,'');
 const $=id=>document.getElementById(id);
 let map,subLayer,projectLayer,projects=[],selectedProject='',substations=[],spatialLayerGroup,spatialMetadata=[];
 const districts=["Adilabad","Bhadradri Kothagudem","Hanamkonda","Hyderabad","Jagtial","Jangaon","Jayashankar Bhupalpally","Jogulamba Gadwal","Kamareddy","Karimnagar","Khammam","Kumuram Bheem Asifabad","Mahabubabad","Mahabubnagar","Mancherial","Medak","Medchal-Malkajgiri","Mulugu","Nagarkurnool","Nalgonda","Narayanpet","Nirmal","Nizamabad","Peddapalli","Rajanna Sircilla","Rangareddy","Sangareddy","Siddipet","Suryapet","Vikarabad","Wanaparthy","Warangal","Yadadri Bhuvanagiri"];
