@@ -26,7 +26,7 @@
  <div class="mapframe"><div id="substationMap"></div></div>
  <div class="source-note" id="mapStatus">Connecting to Telangana GIS…</div>
  <div class="tablewrap"><table class="station-table"><thead><tr><th>Substation</th><th>Voltage</th><th>Location</th><th>Owner</th><th>Status</th></tr></thead><tbody id="stationRows"><tr><td colspan="5">Loading records…</td></tr></tbody></table></div>
- <p class="source-note">Coverage caveat: this is the published TGRAC RRR electric-transmission substation layer, not a certified, exhaustive statewide TSTRANSCO inventory. Some records may lack voltage, location or ownership fields. Coordinates and attributes are shown as published; confirm with the utility before site selection. Map tiles © OpenStreetMap contributors.</p>
+ <p class="source-note">Coverage caveat: this is the published TGRAC RRR electric-transmission substation layer, not a certified, exhaustive statewide TSTRANSCO inventory. Some records may lack voltage, location or ownership fields. Coordinates and attributes are shown as published; confirm with the utility before site selection. Map tiles © OpenStreetMap contributors · © CARTO.</p>
 </section>
 <div class="grid" style="margin-top:18px">
 <section class="card"><h2>1. Candidate site screening</h2><p class="muted">Enter five 0–100 suitability scores. Higher is better for every criterion.</p>
@@ -64,7 +64,7 @@ function initStationMap(){
  if(stationMap)return;
  if(!window.L){el('mapStatus').textContent='Map library did not load. Check internet access and refresh.';return}
  stationMap=L.map('substationMap').setView([17.85,79.1],7);
- L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(stationMap);
+ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(stationMap);
  stationLayer=L.layerGroup().addTo(stationMap);
 }
 function attr(a,...keys){for(const k of keys){if(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=='')return String(a[k])}return 'Not published'}
