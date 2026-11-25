@@ -1,7 +1,6 @@
 """Read-only Hyderabad/Telangana spatial API backed by the imported public GIS tables."""
 from __future__ import annotations
 
-import json
 import os
 from typing import Any
 
@@ -18,9 +17,21 @@ LAYERS: dict[str, dict[str, str]] = {
     "water_areas": {"table": "water_areas", "label": "Water areas", "geometry": "MultiPolygon"},
     "protected_areas": {"table": "protected_areas", "label": "Protected areas", "geometry": "MultiPolygon"},
     "roads_hyderabad": {"table": "roads_hyderabad", "label": "Roads", "geometry": "LineString"},
-    "power_hyderabad_polygons": {"table": "power_hyderabad_polygons", "label": "Power infrastructure polygons", "geometry": "MultiPolygon"},
-    "power_hyderabad_points": {"table": "power_hyderabad_points", "label": "Power infrastructure points", "geometry": "Point"},
-    "power_hyderabad_lines": {"table": "power_hyderabad_lines", "label": "Power infrastructure lines", "geometry": "LineString"},
+    "power_hyderabad_polygons": {
+        "table": "power_hyderabad_polygons",
+        "label": "Power infrastructure polygons",
+        "geometry": "MultiPolygon",
+    },
+    "power_hyderabad_points": {
+        "table": "power_hyderabad_points",
+        "label": "Power infrastructure points",
+        "geometry": "Point",
+    },
+    "power_hyderabad_lines": {
+        "table": "power_hyderabad_lines",
+        "label": "Power infrastructure lines",
+        "geometry": "LineString",
+    },
 }
 
 
@@ -29,7 +40,7 @@ def _connect():
     if not database_url:
         raise HTTPException(
             status_code=503,
-            detail="Spatial database is not configured. Set DATABASE_URL in the SolAI API deployment.",
+            detail="Spatial database is not configured. Set DATABASE_URL in the SolAI deployment.",
         )
     try:
         return psycopg.connect(database_url, connect_timeout=5, row_factory=dict_row)
@@ -57,12 +68,18 @@ def spatial_health():
             "layers": counts,
             "total_features": sum(counts.values()),
             "crs": "EPSG:4326",
-            "notice": "Counts reflect the imported public GIS tables; source completeness and utility status are not implied.",
+            "notice": (
+                "Counts reflect the imported public GIS tables; "
+                "source completeness and utility status are not implied."
+            ),
         }
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=503, detail="Spatial database health check failed; verify that all eight public GIS tables exist.") from exc
+        raise HTTPException(
+            status_code=503,
+            detail="Spatial database health check failed; verify that all eight public GIS tables exist.",
+        ) from exc
 
 
 @router.get("/layers")
@@ -85,25 +102,33 @@ def list_spatial_layers():
                         """
                     )
                     stats = cur.fetchone()
-                    result.append({
-                        "id": key,
-                        "table": table,
-                        "label": layer["label"],
-                        "expected_geometry": layer["geometry"],
-                        **stats,
-                    })
+                    result.append(
+                        {
+                            "id": key,
+                            "table": table,
+                            "label": layer["label"],
+                            "expected_geometry": layer["geometry"],
+                            **stats,
+                        }
+                    )
         return {
             "city": "Hyderabad",
             "state": "Telangana",
             "crs": "EPSG:4326",
             "layers": result,
             "total_features": sum(item["feature_count"] for item in result),
-            "notice": "Open-data screening layers only. They are not cadastral, statutory or utility-certified records.",
+            "notice": (
+                "Open-data screening layers only. They are not cadastral, statutory "
+                "or utility-certified records."
+            ),
         }
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=503, detail="Could not read spatial layer metadata; verify the imported table names and geom columns.") from exc
+        raise HTTPException(
+            status_code=503,
+            detail="Could not read spatial layer metadata; verify the imported table names and geom columns.",
+        ) from exc
 
 
 @router.get("/nearby")
@@ -115,16 +140,17 @@ def nearby_features(
     limit: int = Query(100, ge=1, le=500),
 ):
     """Return nearby GIS features as GeoJSON, ordered by straight-line distance."""
-    requested = list(LAYERS) if layers.strip().lower() == "all" else [
-        item.strip() for item in layers.split(",") if item.strip()
-    ]
+    requested = (
+        list(LAYERS)
+        if layers.strip().lower() == "all"
+        else [item.strip() for item in layers.split(",") if item.strip()]
+    )
     if not requested or any(item not in LAYERS for item in requested):
         raise HTTPException(
             status_code=422,
             detail={"message": "Unknown layer selection.", "available_layers": list(LAYERS)},
         )
 
-    per_layer_limit = max(1, min(limit, 500))
     features: list[dict[str, Any]] = []
     try:
         with _connect() as conn:
@@ -150,21 +176,22 @@ def nearby_features(
                         ORDER BY distance_m
                         LIMIT %s
                         """,
-                        (lon, lat, lon, lat, radius_m, per_layer_limit),
+                        (lon, lat, lon, lat, radius_m, limit),
                     )
                     for row in cur.fetchall():
-                        geometry = row["geometry"]
-                        properties = row["properties"] or {}
-                        features.append({
-                            "type": "Feature",
-                            "id": f"{key}.{row['gid']}",
-                            "geometry": geometry,
-                            "properties": {
-                                **properties,
-                                "layer": key,
-                                "distance_m": round(float(row["distance_m"]), 1),
-                            },
-                        })
+                        features.append(
+                            {
+                                "type": "Feature",
+                                "id": f"{key}.{row['gid']}",
+                                "geometry": row["geometry"],
+                                "properties": {
+                                    **(row["properties"] or {}),
+                                    "layer": key,
+                                    "distance_m": round(float(row["distance_m"]), 1),
+                                },
+                            }
+                        )
+
         features.sort(key=lambda feature: feature["properties"]["distance_m"])
         features = features[:limit]
         return {
@@ -172,9 +199,15 @@ def nearby_features(
             "query": {"lat": lat, "lon": lon, "radius_m": radius_m, "layers": requested},
             "numberReturned": len(features),
             "features": features,
-            "notice": "Distances are straight-line proximity only. They do not establish road travel time, land rights, statutory clearance, electrical connection or grid hosting capacity.",
+            "notice": (
+                "Distances are straight-line proximity only. They do not establish road travel time, "
+                "land rights, statutory clearance, electrical connection or grid hosting capacity."
+            ),
         }
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=503, detail="Spatial query failed; verify PostGIS geography support and imported layer schemas.") from exc
+        raise HTTPException(
+            status_code=503,
+            detail="Spatial query failed; verify PostGIS geography support and imported layer schemas.",
+        ) from exc
