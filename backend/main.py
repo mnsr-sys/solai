@@ -179,6 +179,64 @@ def score_candidate_sites(payload: SiteScreeningRequest):
         "notice": "Candidate-site screening only. Confirm parcels, exclusions and grid feasibility with authoritative agencies and utilities.",
     }
 
+
+
+@app.get("/api/v1/solar/resource")
+def solar_resource(
+    lat: float = Field(..., ge=15.0, le=20.5),
+    lon: float = Field(..., ge=77.0, le=82.0),
+    start: str = "20250101",
+    end: str = "20251231",
+    performance_ratio: float = Field(0.78, ge=0.5, le=0.9),
+):
+    """Fetch daily all-sky surface solar irradiation from NASA POWER for a Telangana point."""
+    import re
+    from fastapi import Query
+    if not re.fullmatch(r"\\d{8}", start) or not re.fullmatch(r"\\d{8}", end) or start > end:
+        raise HTTPException(status_code=422, detail="start/end must be ordered YYYYMMDD dates.")
+    try:
+        response = httpx.get(
+            "https://power.larc.nasa.gov/api/temporal/daily/point",
+            params={
+                "parameters": "ALLSKY_SFC_SW_DWN", "community": "RE",
+                "longitude": lon, "latitude": lat, "start": start, "end": end,
+                "format": "JSON", "time-standard": "UTC",
+            },
+            timeout=25.0,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        values = payload["properties"]["parameter"]["ALLSKY_SFC_SW_DWN"]
+        valid = [float(v) for v in values.values() if v is not None and float(v) >= 0]
+        if not valid:
+            raise ValueError("NASA POWER returned no valid irradiation values for this period.")
+        annual_ghi = sum(valid)
+        mean_daily = annual_ghi / len(valid)
+        specific_yield = annual_ghi * performance_ratio
+        return {
+            "source": "NASA POWER",
+            "source_url": "https://power.larc.nasa.gov/docs/services/api/temporal/daily/",
+            "parameter": "ALLSKY_SFC_SW_DWN",
+            "parameter_description": "All-sky surface shortwave downward irradiation",
+            "unit": "kWh/m2/day",
+            "latitude": lat, "longitude": lon, "start": start, "end": end,
+            "valid_days": len(valid), "mean_daily_ghi_kwh_m2_day": round(mean_daily, 3),
+            "period_ghi_kwh_m2": round(annual_ghi, 2),
+            "performance_ratio_assumption": performance_ratio,
+            "indicative_specific_yield_mwh_per_mw_year": round(specific_yield, 1),
+            "status": "resource-screening-estimate-not-bankable-yield",
+            "limitations": [
+                "NASA POWER is gridded satellite/reanalysis resource data, not an on-site pyranometer measurement.",
+                "This simplified estimate applies a stated performance ratio to horizontal irradiation; it is not a PV simulation.",
+                "It does not model array tilt, azimuth, shading, temperature losses, clipping, soiling, degradation, downtime or curtailment.",
+                "Use site-specific design and independent resource validation for financing and engineering decisions.",
+            ],
+        }
+    except HTTPException:
+        raise
+    except (httpx.HTTPError, KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=502, detail="Solar-resource provider unavailable or returned an unusable response.") from exc
+
 @app.post("/api/v1/solar/potential")
 def estimate_solar_potential(payload: SolarPotentialRequest):
     capacity = payload.usable_area_m2 * payload.installed_density_w_per_m2 / 1_000_000
