@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS solai.source_datasets (
 );
 CREATE INDEX IF NOT EXISTS source_datasets_coverage_gix
     ON solai.source_datasets USING gist (coverage_geom);
+CREATE UNIQUE INDEX IF NOT EXISTS source_datasets_source_release_coverage_uidx
+    ON solai.source_datasets (source_name, source_release, coverage_name);
 
 -- Normalised landing table for OSM, Overture, TGRAC and other vector layers.
 -- Preserve original tags/attributes and dataset lineage; never treat OSM as official utility data.
