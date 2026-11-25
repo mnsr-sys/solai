@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Literal
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 import httpx
@@ -183,15 +183,14 @@ def score_candidate_sites(payload: SiteScreeningRequest):
 
 @app.get("/api/v1/solar/resource")
 def solar_resource(
-    lat: float = Field(..., ge=15.0, le=20.5),
-    lon: float = Field(..., ge=77.0, le=82.0),
+    lat: float = Query(..., ge=15.0, le=20.5),
+    lon: float = Query(..., ge=77.0, le=82.0),
     start: str = "20250101",
     end: str = "20251231",
-    performance_ratio: float = Field(0.78, ge=0.5, le=0.9),
+    performance_ratio: float = Query(0.78, ge=0.5, le=0.9),
 ):
     """Fetch daily all-sky surface solar irradiation from NASA POWER for a Telangana point."""
     import re
-    from fastapi import Query
     if not re.fullmatch(r"\\d{8}", start) or not re.fullmatch(r"\\d{8}", end) or start > end:
         raise HTTPException(status_code=422, detail="start/end must be ordered YYYYMMDD dates.")
     try:
