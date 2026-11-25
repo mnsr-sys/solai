@@ -8,10 +8,35 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 
+StateCode = Literal["Telangana", "Karnataka"]
+
+STATE_CONFIG = {
+    "Telangana": {
+        "code": "TS",
+        "priority": 1,
+        "pilot_status": "primary-demo-state",
+        "districts": [
+            "Hyderabad", "Medchal-Malkajgiri", "Rangareddy", "Sangareddy",
+            "Yadadri Bhuvanagiri", "Warangal", "Karimnagar", "Nalgonda",
+        ],
+        "data_notice": "District list is an initial demo selector, not a verified inventory of substations or candidate parcels.",
+    },
+    "Karnataka": {
+        "code": "KA",
+        "priority": 2,
+        "pilot_status": "next-expansion-state",
+        "districts": [
+            "Bengaluru Urban", "Bengaluru Rural", "Mysuru", "Tumakuru",
+            "Belagavi", "Dharwad", "Kalaburagi", "Dakshina Kannada",
+        ],
+        "data_notice": "District list is an initial demo selector, not a verified inventory of substations or candidate parcels.",
+    },
+}
+
 app = FastAPI(
     title="Reker SolAI API",
-    version="0.1.0",
-    description="Transparent screening and indicative solar-potential estimation for substation-adjacent sites.",
+    version="0.2.0",
+    description="Multi-state solar substation screening; Telangana is the first implementation priority, followed by Karnataka.",
 )
 
 app.add_middleware(
@@ -22,14 +47,14 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
-METHODOLOGY_VERSION = "screening-v0.1"
+METHODOLOGY_VERSION = "screening-v0.2"
 projects: dict[str, dict] = {}
 
 
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     district: str = Field(min_length=2, max_length=80)
-    state: str = "Telangana"
+    state: StateCode = "Telangana"
     data_status: Literal["public", "synthetic", "utility-provided"] = "synthetic"
 
 
@@ -46,6 +71,8 @@ class SiteFeatures(BaseModel):
 
 
 class ScreeningRequest(BaseModel):
+    state: StateCode = "Telangana"
+    district: str = Field(default="Hyderabad", min_length=2, max_length=80)
     sites: list[SiteFeatures] = Field(min_length=1, max_length=500)
     weights: dict[str, float] | None = None
 
@@ -86,8 +113,20 @@ def health():
     return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
+@app.get("/api/v1/states")
+def list_states():
+    return {
+        "priority_order": ["Telangana", "Karnataka"],
+        "default_state": "Telangana",
+        "states": STATE_CONFIG,
+        "notice": "State and district selectors are geographic scaffolding. They do not imply verified substation or land datasets.",
+    }
+
+
 @app.post("/api/v1/projects", status_code=201)
 def create_project(payload: ProjectCreate):
+    if payload.district not in STATE_CONFIG[payload.state]["districts"]:
+        raise HTTPException(status_code=422, detail=f"District is not in the current {payload.state} demo selector.")
     project_id = str(uuid4())
     record = {
         "project_id": project_id,
@@ -114,6 +153,8 @@ def get_project(project_id: str):
 
 @app.post("/api/v1/sites/score")
 def score_sites(payload: ScreeningRequest):
+    if payload.district not in STATE_CONFIG[payload.state]["districts"]:
+        raise HTTPException(status_code=422, detail=f"District is not in the current {payload.state} demo selector.")
     weights = payload.weights or DEFAULT_WEIGHTS
     total_weight = sum(weights.values())
     normalized = {key: value / total_weight for key, value in weights.items()}
@@ -134,6 +175,8 @@ def score_sites(payload: ScreeningRequest):
         })
     results.sort(key=lambda item: item["suitability_score"], reverse=True)
     return {
+        "state": payload.state,
+        "district": payload.district,
         "methodology_version": METHODOLOGY_VERSION,
         "weights": normalized,
         "ranked_sites": results,
@@ -143,7 +186,6 @@ def score_sites(payload: ScreeningRequest):
 
 @app.post("/api/v1/solar/estimate")
 def estimate_solar(payload: SolarEstimateRequest):
-    # Illustrative screening calculation. Actual layout, setbacks, technology and losses require design validation.
     capacity_mw_dc = payload.usable_area_m2 * payload.installed_density_w_per_m2 / 1_000_000
     annual_generation_mwh = capacity_mw_dc * payload.specific_yield_mwh_per_mw_year
     avoided_tco2e = annual_generation_mwh * payload.grid_emission_factor_tco2e_per_mwh
