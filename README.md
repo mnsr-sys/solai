@@ -1,40 +1,54 @@
 # Reker SolAI
 
-**Solar Substation Potential Assessment** — a multi-state decision-support prototype for screening candidate solar sites around electricity substations.
+**Solar Asset Intelligence & Carbon MRV for Telangana**
 
-**Geographic rollout:** Telangana is the first implementation and demo priority. Karnataka is included as the next expansion state, using the same assessment engine with state-specific datasets and utility criteria.
+Reker SolAI is a climate-infrastructure intelligence and measurement, reporting and verification (MRV) platform focused on quantifying renewable electricity generation and tracking the evidence needed to assess carbon-credit potential from solar projects associated with substations and the wider electricity network in Telangana.
 
-## Current status
+## Objective
 
-This repository is an engineering prototype. It does **not** yet contain Telangana or Karnataka utility-validated substation inventories, live utility integrations, or validated solar-site results. District selectors are geographic scaffolding only. Example site inputs are synthetic unless explicitly labelled otherwise.
+Help solar project developers, asset owners, utilities and climate stakeholders answer four questions:
+
+1. Where are existing and potential solar assets in Telangana, and how are they spatially related to substations and grid infrastructure?
+2. How much renewable electricity is actually generated and delivered, based on reliable meter and operational data?
+3. What emissions are avoided compared with a documented grid-electricity baseline?
+4. Which projects may qualify for carbon-credit issuance under an applicable methodology, and what monitoring evidence, safeguards and third-party validation are required?
+
+SolAI aims to make solar generation and its climate impact measurable, traceable and auditable—not simply map solar potential.
+
+## What SolAI builds
+
+- **Solar and substation intelligence:** geospatial inventory of solar installations, substations and relevant infrastructure using open data and verified asset records.
+- **Generation MRV:** ingest inverter, generation-meter and export-meter data; validate time series, meter identity, gaps, anomalies and reconciliation.
+- **Emissions accounting:** calculate net renewable electricity supplied and estimated avoided grid emissions using a documented, applicable baseline and emission factor.
+- **Carbon-credit readiness:** map project evidence to the requirements of an applicable carbon-crediting methodology, including additionality, project boundary, baseline, monitoring, ownership, safeguards and double-counting checks.
+- **Audit trail:** preserve source records, timestamps, methodology versions, calculations, review status and cryptographic integrity checks.
+
+## Telangana focus
+
+The product and data model are focused on Telangana. District-level views are for organising analysis; they do not imply complete official coverage or utility validation.
+
+## Data strategy for the demonstration
+
+Use free/open datasets and open-source software wherever possible: OpenStreetMap, Copernicus Sentinel-2, Copernicus DEM, relevant openly licensed reference layers, QGIS, PostgreSQL/PostGIS, Python and FastAPI. Use official utility, project-owner and meter data only when access is authorised. Public geospatial data can support discovery and context; it cannot replace verified generation meters, ownership records or utility confirmation.
 
 ## Product workflow
 
-1. Select a state and district (Telangana first; Karnataka next).
-2. Register a project and substation.
-3. Ingest candidate-site features from documented geospatial datasets.
-4. Screen sites using transparent criteria: land availability, shading, slope, flood risk and grid proximity.
-5. Rank candidates using configurable weights.
-6. Estimate indicative DC capacity and annual generation from usable area and specific yield.
-7. Calculate indicative avoided emissions using an explicitly supplied grid emission factor.
-8. Preserve inputs, assumptions, methodology version and validation status for an auditable assessment.
-
-## State rollout
-
-| Priority | State | Current role |
-|---|---|---|
-| 1 | Telangana | Primary demo and first pilot geography |
-| 2 | Karnataka | Next expansion geography; shared engine, separate data and criteria |
-
-The current district lists are starter selectors, not official or complete administrative inventories and not evidence of substation coverage.
+1. Discover and map solar assets and substations from attributed open data and authorised records.
+2. Register each project, asset owner, location, commissioning date, capacity and project boundary.
+3. Connect or import generation and grid-export meter data.
+4. Validate meter readings, data completeness, outages, curtailment and energy balance.
+5. Calculate net eligible renewable electricity and baseline emissions using a selected methodology.
+6. Generate monitoring reports, evidence packages and carbon-credit readiness status.
+7. Track independent validation/verification and issuance status separately from estimated reductions.
 
 ## Technology direction
 
 - API: Python, FastAPI, Pydantic
-- Persistence: PostgreSQL; PostGIS is a planned spatial extension
-- Frontend: React / Next.js planned; a lightweight prototype UI is used first
-- Cloud: AWS planned
-- Geospatial processing: GDAL, Rasterio, GeoPandas and Shapely are proposed additions, not yet integrated
+- Spatial database: PostgreSQL + PostGIS
+- Geospatial processing: QGIS, GDAL, Rasterio, GeoPandas and Shapely
+- Data ingestion: secure CSV/API ingestion initially; telemetry integrations as authorised
+- Frontend: existing web application
+- Auditability: immutable event history and content hashes; hashes support integrity, not source-data truth
 
 ## Run the API locally
 
@@ -45,14 +59,16 @@ pip install -r requirements.txt
 uvicorn backend.main:app --reload
 ```
 
-Open http://127.0.0.1:8000/docs for the API documentation. State and district options are available at `GET /api/v1/states`.
+Open http://127.0.0.1:8000/docs for API documentation.
 
-## Important methodology boundaries
+## Carbon accounting and claims boundaries
 
-- Suitability scores are screening indicators, not engineering approvals.
-- Grid proximity is not electrical hosting capacity. Transformer loading, feeder constraints, voltage and interconnection studies require utility data.
-- Solar generation is an estimate until validated against site design and operational metering.
-- Avoided emissions are estimates, not issued or verified carbon credits.
-- A hash can demonstrate record integrity; it does not prove that source data is true.
+- Renewable generation is not itself proof that carbon credits can be issued.
+- Avoided emissions are estimates until calculated under an applicable methodology with verified project and monitoring data.
+- Carbon-credit eligibility depends on methodology requirements, including additionality where applicable, baseline, project boundary, ownership/rights, monitoring, leakage, safeguards and double counting.
+- Metered generation must be distinguished from capacity, modelled generation, grid export and self-consumption.
+- Substation proximity does not prove grid connection, dispatch, export or hosting capacity.
+- SolAI must label estimated reductions, methodology-screened potential, validated reductions and issued credits as distinct statuses.
+- Independent validation and verification, registry approval and issuance are performed by the relevant authorised bodies—not by SolAI.
 
-See [docs/METHODOLOGY.md](docs/METHODOLOGY.md), [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
+See [docs/METHODOLOGY.md](docs/METHODOLOGY.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/CARBON_MRV_FRAMEWORK.md](docs/CARBON_MRV_FRAMEWORK.md).
