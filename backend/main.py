@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 import httpx
 
 DISTRICTS = [
@@ -35,6 +35,47 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+DEFAULT_SCREENING_WEIGHTS = {
+    "land_availability": 0.30,
+    "shading": 0.20,
+    "slope": 0.15,
+    "flood_safety": 0.20,
+    "grid_proximity": 0.15,
+}
+
+class CandidateSite(BaseModel):
+    site_id: str = Field(min_length=1, max_length=80)
+    label: str = Field(min_length=1, max_length=120)
+    usable_area_m2: float = Field(ge=0)
+    land_availability: float = Field(ge=0, le=100)
+    shading: float = Field(ge=0, le=100, description="Higher means less shading")
+    slope: float = Field(ge=0, le=100, description="Higher means more suitable terrain")
+    flood_safety: float = Field(ge=0, le=100, description="Higher means lower flood exposure")
+    grid_proximity: float = Field(ge=0, le=100, description="Proximity screening score only")
+    data_status: Literal["public", "synthetic", "owner-provided", "utility-provided"] = "synthetic"
+
+class SiteScreeningRequest(BaseModel):
+    district: str
+    sites: list[CandidateSite] = Field(min_length=1, max_length=500)
+    weights: dict[str, float] | None = None
+
+    @model_validator(mode="after")
+    def validate_weights(self):
+        if self.weights is not None:
+            required = set(DEFAULT_SCREENING_WEIGHTS)
+            if set(self.weights) != required:
+                raise ValueError(f"Weights must contain exactly: {sorted(required)}")
+            if any(v < 0 for v in self.weights.values()) or sum(self.weights.values()) <= 0:
+                raise ValueError("Weights must be non-negative and sum to a positive value")
+        return self
+
+class SolarPotentialRequest(BaseModel):
+    usable_area_m2: float = Field(gt=0)
+    installed_density_w_per_m2: float = Field(default=200, gt=0, le=400)
+    specific_yield_mwh_per_mw_year: float = Field(default=1500, gt=0, le=3000)
+    grid_emission_factor_tco2e_per_mwh: float | None = Field(default=None, gt=0, le=2)
 
 # Demo persistence only. Replace with managed PostgreSQL/PostGIS before production use.
 projects: dict[str, dict] = {}
@@ -107,6 +148,56 @@ def dashboard():
         "estimated_avoided_emissions_tco2e": None,
         "data_notice": "Only uploaded records in this running demo instance are counted. No live utility feed is connected.",
     }
+
+
+@app.post("/api/v1/sites/score")
+def score_candidate_sites(payload: SiteScreeningRequest):
+    if payload.district not in DISTRICTS:
+        raise HTTPException(status_code=422, detail="District must be in Telangana.")
+    weights = payload.weights or DEFAULT_SCREENING_WEIGHTS
+    total = sum(weights.values())
+    normalised = {k: v / total for k, v in weights.items()}
+    ranked = []
+    for site in payload.sites:
+        values = site.model_dump()
+        score = sum(values[k] * normalised[k] for k in normalised)
+        ranked.append({
+            **values,
+            "suitability_score": round(score, 2),
+            "screening_band": "High" if score >= 75 else "Medium" if score >= 50 else "Low",
+            "status": "indicative-geospatial-screening",
+            "limitations": [
+                "Score is a prioritisation aid, not a land-title, engineering or statutory approval.",
+                "Grid proximity does not establish feeder connectivity, spare hosting capacity or evacuation feasibility.",
+                "Land, water, flood, slope and land-cover attributes require source-specific validation.",
+            ],
+        })
+    ranked.sort(key=lambda x: x["suitability_score"], reverse=True)
+    return {
+        "state": "Telangana", "district": payload.district,
+        "weights": normalised, "ranked_sites": ranked,
+        "notice": "Candidate-site screening only. Confirm parcels, exclusions and grid feasibility with authoritative agencies and utilities.",
+    }
+
+@app.post("/api/v1/solar/potential")
+def estimate_solar_potential(payload: SolarPotentialRequest):
+    capacity = payload.usable_area_m2 * payload.installed_density_w_per_m2 / 1_000_000
+    annual_mwh = capacity * payload.specific_yield_mwh_per_mw_year
+    response = {
+        "usable_area_m2": payload.usable_area_m2,
+        "installed_density_w_per_m2": payload.installed_density_w_per_m2,
+        "estimated_capacity_mw_dc": round(capacity, 4),
+        "specific_yield_mwh_per_mw_year": payload.specific_yield_mwh_per_mw_year,
+        "estimated_annual_generation_mwh": round(annual_mwh, 2),
+        "status": "planning-estimate-not-metered-generation",
+        "notice": "Planning-stage estimate based on user-supplied assumptions. It is not measured generation, grid acceptance or a carbon-credit calculation.",
+    }
+    if payload.grid_emission_factor_tco2e_per_mwh is not None:
+        response["indicative_avoided_emissions_tco2e_per_year"] = round(
+            annual_mwh * payload.grid_emission_factor_tco2e_per_mwh, 2
+        )
+        response["emissions_status"] = "indicative-planning-screen-only-not-mrv"
+    return response
 
 @app.post("/api/v1/projects", status_code=201)
 def create_project(payload: ProjectCreate):
