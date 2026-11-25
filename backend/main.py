@@ -324,3 +324,8 @@ def map_layers():
         "basemap": "OpenStreetMap / CARTO",
         "notice": "Mapped infrastructure is contextual GIS data; confirm asset identity, voltage, operational status and electrical connection with the utility.",
     }
+
+
+# Read-only PostGIS spatial endpoints (existing demo/MRV routes remain unchanged).
+from backend.spatial import router as spatial_router
+app.include_router(spatial_router)
