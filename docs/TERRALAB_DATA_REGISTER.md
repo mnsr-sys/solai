@@ -1,46 +1,45 @@
-# Hyderabad pilot geospatial data register
+# Telangana geospatial data register
 
-Purpose: record public geospatial screening layers for Reker SolAI. These are preliminary screening inputs, not utility-validated inventory, land-title evidence, statutory exclusion boundaries or engineering approval.
+## Purpose
 
-## Cost
-TerraLab documentation states 100 free MCP/API calls per month, then pay-per-call from a prepaid balance, with no subscription. Check the current account balance/pricing before scaling. The calls made for this pilot returned `call_usage.state = not_counted`.
-Pricing: https://terra-lab.ai/docs/pricing
+This register describes public and open geospatial context layers that may support solar-asset discovery and preliminary infrastructure screening across Telangana. It is not an official asset inventory, statutory land-use register, grid-capacity assessment or project verification record.
 
-## Pilot extent
-Centre: 17.360588 N, 78.474061 E (Hyderabad, Telangana). Main radius: 15 km (~900 km²). Roads radius: 2.5 km (~25 km²), because the larger road query exceeded the 20,000-feature extract limit.
+## Public infrastructure context
 
-## Extracts
-| Layer | Features | Source/release |
-|---|---:|---|
-| Land use | 2,893 | OpenStreetMap planet 2026-11-16 |
-| Waterways | 309 | OpenStreetMap planet 2026-11-16 |
-| Water areas | 343 | OpenStreetMap planet 2026-11-16 |
-| Protected areas | 5 | OpenStreetMap planet 2026-11-16 |
-| Roads | 16,172 | Overture Maps 2026-11-18 |
+- **TGRAC public ArcGIS electric-transmission substation layer:** the dashboard queries the published RRR electric-transmission substation service at `https://tgrac.telangana.gov.in/arcgis/rest/services/RRR_Folder/RRR/MapServer/8`. Treat the layer as a discovery reference only. Validate asset identity, voltage, operational status, ownership, feeder association and electrical connection with the relevant utility before use in project decisions.
+- **OpenStreetMap:** roads, waterways, land-use tags and mapped infrastructure. Attribute the source and comply with ODbL obligations.
+- **Overture Maps:** supplementary features where the release terms and source attribution are suitable.
+- **Copernicus Sentinel-2:** imagery for land-cover and change context. Record product ID, acquisition date, processing level, cloud cover and resolution.
+- **Copernicus DEM GLO-30:** regional elevation/slope context, not detailed engineering survey.
+- **ESA WorldCover:** reference land-cover classification, not cadastral or statutory land-use evidence.
+- **NASA POWER / PVGIS:** optional solar-resource context, not a substitute for actual plant meter readings.
 
-Combined land/water/protected extract was not truncated. Roads extract was not truncated.
+## Required provenance fields
 
-## Elevation
-Copernicus DEM GLO-30 surface model; returned grid approximately 31 m; extent ~900 km². Elevation range 458–633 m, mean 542 m (EGM2008 geoid). DEM, hillshade and slope GeoTIFFs were generated.
+For every layer retain: publisher, dataset/service name, stable layer ID, URL, licence/terms, retrieval date, data vintage, coordinate reference system, spatial extent, resolution/scale, attribute schema, processing steps, validation status and known limitations.
 
-Required notice: Produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of this product.
+## Project and energy evidence still required
 
-## Licences and attribution
-OSM-derived data: ODbL 1.0; commercial use allowed with attribution. A database published from OSM-derived data must remain under ODbL; maps, images and reports may use another licence. Attribution: © OpenStreetMap contributors, modified by TerraLab.
-Overture Maps extract: TerraLab reports ODbL 1.0 and attribution to OpenStreetMap contributors, Overture Maps Foundation and TomTom. Review the source release terms before redistribution.
-Copernicus DEM: reproduction, distribution and modification allowed subject to retaining the required notice above.
+Public map layers do not provide the evidence required for carbon MRV. Obtain authorised, project-specific records as applicable:
 
-## Limitations
-- OSM/Overture completeness varies. A missing mapped feature does not prove absence on the ground.
-- Only five protected-area features were mapped in this pilot extent. This is inadequate for statutory exclusion screening; obtain authoritative forest, wildlife, wetlands, eco-sensitive-zone and other government boundaries.
-- Land-use tags and water features are not cadastral/title evidence. Verify ownership, encumbrances, access, permitted use and water/flood buffers with authoritative records.
-- Roads support preliminary proximity/corridor analysis, not surveyed transmission right-of-way.
-- A separate 20 km Hyderabad OSM power extract contains 2,889 mapped features, but is not a verified/exhaustive TSTRANSCO inventory or evidence of operational status/hosting capacity.
-- No feeder load curves, transformer ratings, protection settings, voltage limits, existing generation register, evacuation cost schedule or land-title data are present in these extracts.
-- DEM is for regional terrain screening, not detailed grading or drainage design.
+1. Project registration, ownership/rights, capacity, technology and commissioning records.
+2. Project boundary, land rights, permits and ownership of environmental attributes.
+3. Calibrated generation and export meter records, meter IDs and replacement/calibration history.
+4. Utility interconnection approval, energy statements and settlement records.
+5. Authoritative land, forest, wildlife, wetlands, flood and other statutory boundaries.
+6. Applicable methodology and official grid emission factor with geography and vintage.
+7. Renewable energy certificate and other environmental-attribute claims.
 
-## Next data requirements
-1. TSTRANSCO/DISCOM verified substation, transformer and feeder data, including interval load curves and existing solar connections.
-2. Official Telangana land parcels, land-use, forest, wildlife, wetlands, flood and waterbody boundaries.
-3. Sentinel-2 imagery with documented classification and validation.
-4. Site visits and revenue-record verification before feasibility claims.
+## Limitations and safe use
+
+- Public GIS coverage can be incomplete, stale or misclassified; missing features do not prove absence on the ground.
+- A mapped substation does not establish available capacity, feeder load, voltage constraints, dispatch or a project's electrical connection.
+- Land-use tags and satellite classification are not title or statutory approvals.
+- A proximity analysis is not an evacuation study or engineering approval.
+- Modelled generation is not metered generation.
+- Do not publish a statewide completeness percentage without a reconciled authoritative reference inventory.
+- Record each data refresh and preserve the exact source version used in a screening or MRV report.
+
+## Licensing and attribution
+
+Retain each provider's current licence and attribution requirements with the dataset. For OSM-derived data, attribution must include © OpenStreetMap contributors and ODbL obligations apply. Review Overture and Copernicus terms for the exact release used. Do not assume every layer has the same redistribution terms.
