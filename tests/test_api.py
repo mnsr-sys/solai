@@ -66,3 +66,42 @@ def test_duplicate_meter_reading_is_skipped():
 
 def test_solar_estimate_endpoint_removed_from_credit_claims():
     assert client.get("/api/v1/dashboard").status_code == 200
+
+def test_candidate_site_screening_ranks_highest_first():
+    response = client.post("/api/v1/sites/score", json={
+        "district": "Rangareddy",
+        "sites": [
+            {"site_id":"A","label":"Higher suitability","usable_area_m2":12000,
+             "land_availability":90,"shading":90,"slope":85,"flood_safety":90,
+             "grid_proximity":80,"data_status":"synthetic"},
+            {"site_id":"B","label":"Lower suitability","usable_area_m2":8000,
+             "land_availability":40,"shading":45,"slope":50,"flood_safety":35,
+             "grid_proximity":40,"data_status":"synthetic"}
+        ]
+    })
+    assert response.status_code == 200
+    ranked = response.json()["ranked_sites"]
+    assert ranked[0]["site_id"] == "A"
+    assert ranked[0]["suitability_score"] > ranked[1]["suitability_score"]
+    assert ranked[0]["status"] == "indicative-geospatial-screening"
+
+def test_solar_potential_is_not_metered_generation():
+    response = client.post("/api/v1/solar/potential", json={
+        "usable_area_m2":10000,
+        "installed_density_w_per_m2":200,
+        "specific_yield_mwh_per_mw_year":1500
+    })
+    assert response.status_code == 200
+    result = response.json()
+    assert result["estimated_capacity_mw_dc"] == 2
+    assert result["estimated_annual_generation_mwh"] == 3000
+    assert result["status"] == "planning-estimate-not-metered-generation"
+
+def test_site_screening_rejects_non_telangan_district():
+    response = client.post("/api/v1/sites/score", json={
+        "district":"Bengaluru Urban",
+        "sites":[{"site_id":"X","label":"X","usable_area_m2":1000,
+         "land_availability":50,"shading":50,"slope":50,"flood_safety":50,
+         "grid_proximity":50}]
+    })
+    assert response.status_code == 422
