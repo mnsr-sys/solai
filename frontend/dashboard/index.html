@@ -1,98 +1,107 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reker SolAI | Solar Substation Assessment</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reker SolAI — Telangana Solar Intelligence</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{font-family:Inter,ui-sans-serif,system-ui;background:#f4f7f8;color:#14212b}*{box-sizing:border-box}body{margin:0}.top{background:#102a35;color:white;padding:28px max(22px,calc((100% - 1120px)/2))}.top small{color:#9ed4c3;letter-spacing:.12em;text-transform:uppercase}.top h1{margin:8px 0;font-size:30px}.top p{color:#c5d5d9;margin:0}.wrap{max-width:1120px;margin:26px auto;padding:0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:white;border:1px solid #dce5e8;border-radius:14px;padding:20px;box-shadow:0 4px 18px #17313b0a}.card h2{font-size:18px;margin:0 0 14px}.muted{color:#61727c;font-size:13px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{display:block;font-size:12px;color:#52636d;margin-bottom:5px}input,select{width:100%;padding:10px;border:1px solid #ccd8dc;border-radius:8px;font:inherit;background:white}button{background:#087e68;color:white;border:0;border-radius:8px;padding:11px 16px;font-weight:650;cursor:pointer;margin-top:14px}button:hover{background:#066754}.full{grid-column:1/-1}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.kpi{background:#eef7f4;border-radius:10px;padding:14px}.kpi b{display:block;font-size:22px;color:#086b59}.kpi span{font-size:12px;color:#60736d}.notice{background:#fff8e8;border:1px solid #f0dfb8;padding:12px;border-radius:9px;font-size:12px;color:#755a20;margin-top:14px}.statebar{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#fff;border:1px solid #dce5e8;border-radius:12px;padding:16px;margin-top:18px}.statebar strong{display:block;margin-bottom:5px}.statebar .muted{margin-top:6px}pre{white-space:pre-wrap;word-break:break-word;background:#f4f7f8;padding:12px;border-radius:8px;font-size:12px;max-height:230px;overflow:auto}.status{font-size:12px;margin-top:10px;color:#52636d}@media(max-width:700px){.grid,.statebar{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.kpis{grid-template-columns:1fr}}
-
-#mapCard{margin-top:18px}.maphead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.maptools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.maptools input,.maptools select{width:auto;min-width:150px}.mapframe{height:520px;border-radius:12px;overflow:hidden;border:1px solid #dce5e8;margin-top:12px}#substationMap{height:100%;width:100%}.mapmeta{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}.pill{background:#eef7f4;border-radius:99px;padding:6px 10px;font-size:12px;color:#176451}.source-note{font-size:12px;color:#687983;margin-top:10px;line-height:1.5}.station-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}.station-table th,.station-table td{text-align:left;padding:9px;border-bottom:1px solid #e8eef0}.station-table th{color:#52636d;background:#f7f9fa}.tablewrap{max-height:250px;overflow:auto}.leaflet-popup-content{font:13px Inter,system-ui;line-height:1.5}@media(max-width:700px){.mapframe{height:420px}.maptools input,.maptools select{width:100%}}
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:#142b32;background:#f3f7f6;--ink:#12313a;--green:#087b66;--muted:#6d7e82;--line:#dfe9e6}
+*{box-sizing:border-box}body{margin:0}.top{background:linear-gradient(120deg,#102f39,#0b594c);color:#fff;padding:25px max(22px,calc((100% - 1320px)/2))}.brand{font-size:11px;letter-spacing:.18em;color:#9bd8c5;font-weight:700}.toprow{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}.top h1{font-size:30px;margin:8px 0 5px}.top p{color:#c6d9d7;margin:0;font-size:14px}.tag{border:1px solid #5d8d80;color:#d4eee5;padding:8px 12px;border-radius:30px;font-size:12px}.wrap{max-width:1320px;margin:22px auto;padding:0 20px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat,.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 4px 18px #12313a08}.stat{padding:16px}.stat small{color:var(--muted);font-size:12px}.stat b{display:block;font-size:25px;margin-top:5px;color:var(--ink)}.card{padding:18px}.mapcard{margin-top:14px}.maphead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.maphead h2,.card h2{font-size:17px;margin:0 0 5px}.muted{font-size:12px;color:var(--muted);line-height:1.5}.maptools{display:flex;gap:8px;flex-wrap:wrap}.maptools input{width:230px}input,select{font:inherit;border:1px solid #cddbd7;border-radius:8px;padding:10px;background:#fff;color:#18333a;width:100%;min-width:0}label{display:block;font-size:12px;color:#607276;margin:0 0 5px}.field{margin-top:11px}.btn{border:0;border-radius:8px;padding:10px 14px;background:var(--green);color:#fff;font-weight:650;cursor:pointer}.btn:hover{background:#06634f}.btn.secondary{background:#e8f3ef;color:#14614f}.map{height:480px;border-radius:11px;overflow:hidden;border:1px solid var(--line);margin-top:12px}.mapfoot{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pill{font-size:11px;background:#edf6f2;color:#236b58;border-radius:30px;padding:6px 10px}.notice{background:#fff8e9;color:#74591d;border:1px solid #f0dfb7;padding:11px 13px;border-radius:10px;font-size:12px;line-height:1.5;margin:14px 0}.layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.status{font-size:12px;color:var(--muted);margin-top:10px;min-height:18px}.tablewrap{overflow:auto;max-height:270px;margin-top:12px}table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;padding:9px;border-bottom:1px solid #e8efed;white-space:nowrap}th{color:#627477;background:#f7faf9;position:sticky;top:0}.empty{color:#718187;text-align:center;padding:22px}pre{background:#f5f8f7;padding:12px;border-radius:9px;white-space:pre-wrap;overflow:auto;font-size:11px;max-height:220px}.resultgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.result{background:#edf6f2;padding:12px;border-radius:9px}.result b{display:block;font-size:18px;color:#086b59}.result span{font-size:11px;color:#60736d}.footer{font-size:11px;color:#819094;text-align:center;padding:25px}@media(max-width:800px){.stats{grid-template-columns:1fr 1fr}.layout{grid-template-columns:1fr}.full{grid-column:auto}.map{height:400px}}@media(max-width:480px){.stats{grid-template-columns:1fr 1fr}.fields{grid-template-columns:1fr}.top h1{font-size:24px}}
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head>
+</head>
 <body>
-<header class="top"><small>REKER · CLIMATE INTELLIGENCE</small><h1>SolAI — Solar Substation Assessment</h1><p>Telangana first. Karnataka next. One transparent screening and dMRV workflow.</p></header>
+<header class="top"><div class="brand">REKER · CLIMATE INFRASTRUCTURE INTELLIGENCE</div><div class="toprow"><div><h1>SolAI / Telangana</h1><p>Solar asset intelligence · generation monitoring · carbon MRV readiness</p></div><div class="tag">TELANGANA ONLY · WORKING DEMO</div></div></header>
 <main class="wrap">
-<div class="notice"><b>Prototype data notice:</b> State and district selectors are geographic scaffolding. No utility-validated substation inventory or live utility data is connected. Entered site values below are synthetic unless you replace them with documented data. Scores are not utility approvals; estimates are not verified carbon credits.</div>
-<section class="statebar">
-<div><strong>Assessment geography</strong><label for="state">State</label><select id="state" onchange="loadDistricts()"><option value="Telangana" selected>Telangana · Primary demo</option><option value="Karnataka">Karnataka · Next expansion</option></select><div class="muted" id="stateNote">Primary implementation priority</div></div>
-<div><strong>District</strong><label for="district">Select district</label><select id="district"><option>Loading districts…</option></select><div class="muted">Options are starter selectors, not verified site coverage.</div></div>
+<section class="stats">
+ <div class="stat"><small>Registered solar projects</small><b id="projectCount">—</b></div>
+ <div class="stat"><small>Uploaded meter records</small><b id="meterCount">—</b></div>
+ <div class="stat"><small>Measured generation (MWh)</small><b id="generation">—</b></div>
+ <div class="stat"><small>Grid export (MWh)</small><b id="exports">—</b></div>
 </section>
-
-<section class="card" id="mapCard">
- <div class="maphead"><div><h2>Telangana substation map</h2><p class="muted">Explore mapped substations and open their recorded attributes. Telangana is the primary demo geography.</p></div>
- <div class="maptools"><input id="stationSearch" placeholder="Search substation / district" oninput="renderStationList()"><select id="voltageFilter" onchange="renderStationList()"><option value="">All voltage levels</option></select><button style="margin:0" onclick="loadSubstations()">Refresh map</button></div></div>
- <div class="mapmeta"><span class="pill" id="stationCount">Loading GIS layer…</span><span class="pill">Source: TGRAC ArcGIS · public GIS layer</span><span class="pill">Markers represent mapped records, not solar suitability</span></div>
- <div class="mapframe"><div id="substationMap"></div></div>
- <div class="source-note" id="mapStatus">Connecting to Telangana GIS…</div>
- <div class="tablewrap"><table class="station-table"><thead><tr><th>Substation</th><th>Voltage</th><th>Location</th><th>Owner</th><th>Status</th></tr></thead><tbody id="stationRows"><tr><td colspan="5">Loading records…</td></tr></tbody></table></div>
- <p class="source-note">Coverage caveat: this is the published TGRAC RRR electric-transmission substation layer, not a certified, exhaustive statewide TSTRANSCO inventory. Some records may lack voltage, location or ownership fields. Coordinates and attributes are shown as published; confirm with the utility before site selection. Map tiles © OpenStreetMap contributors · © CARTO.</p>
+<div class="notice"><b>Evidence boundary:</b> Public GIS points are discovery/context layers, not proof of ownership, operating status, grid connection or hosting capacity. Meter data uploaded here is not independently verified. Emissions outputs are indicative estimates—not verified reductions or issued carbon credits. This demo stores data in application memory; records may reset when the server restarts or a serverless instance changes. Connect managed PostgreSQL before production use.</div>
+<section class="card mapcard">
+ <div class="maphead"><div><h2>Telangana infrastructure map</h2><div class="muted">Live public substation context + solar projects registered in this SolAI demo. Click the map to set a new project's coordinates.</div></div>
+ <div class="maptools"><input id="mapSearch" placeholder="Search registered projects"><button class="btn secondary" onclick="refreshAll()">Refresh</button></div></div>
+ <div class="map" id="map"></div>
+ <div class="mapfoot"><span class="pill" id="subCount">Loading GIS layer…</span><span class="pill" id="projectMapCount">0 SolAI projects</span><span class="pill">TGRAC public GIS · OpenStreetMap basemap</span><span class="pill">Map click sets project coordinates</span></div>
+ <div class="muted" id="mapStatus" style="margin-top:9px">Connecting to public GIS…</div>
 </section>
-<div class="grid" style="margin-top:18px">
-<section class="card"><h2>1. Candidate site screening</h2><p class="muted">Enter five 0–100 suitability scores. Higher is better for every criterion.</p>
-<div class="fields">
-<div><label>Site ID</label><input id="site" value="TS-SAMPLE-01"></div><div><label>Usable area (m²)</label><input id="area" type="number" value="10000"></div>
-<div><label>Land availability</label><input id="land" type="number" min="0" max="100" value="85"></div>
-<div><label>Low shading</label><input id="shade" type="number" min="0" max="100" value="80"></div>
-<div><label>Slope suitability</label><input id="slope" type="number" min="0" max="100" value="90"></div>
-<div><label>Flood safety</label><input id="flood" type="number" min="0" max="100" value="75"></div>
-<div><label>Grid proximity</label><input id="grid" type="number" min="0" max="100" value="70"></div>
-</div><button onclick="score()">Calculate suitability</button><div id="scoreStatus" class="status">API: waiting</div><pre id="scoreOut">No screening result yet.</pre></section>
-<section class="card"><h2>2. Solar and impact estimate</h2><p class="muted">All assumptions are editable. Replace them with sourced values before presenting a result.</p>
-<div class="fields">
-<div><label>Usable area (m²)</label><input id="solarArea" type="number" value="10000"></div>
-<div><label>Installed density (W/m²)</label><input id="density" type="number" value="200"></div>
-<div><label>Specific yield (MWh/MW/year)</label><input id="yield" type="number" value="1500"></div>
-<div><label>Grid factor (tCO₂e/MWh)</label><input id="factor" type="number" step="0.001" value="0.7"></div>
-</div><button onclick="estimate()">Estimate solar potential</button><div id="solarStatus" class="status">API: waiting</div>
-<div id="kpis" class="kpis" style="margin-top:14px"><div class="kpi"><b>—</b><span>Estimated MW DC</span></div><div class="kpi"><b>—</b><span>Annual MWh</span></div><div class="kpi"><b>—</b><span>tCO₂e/year</span></div></div><pre id="solarOut">No estimate yet.</pre></section>
-<section class="card full"><h2>3. Connect to SolAI API</h2><p class="muted">Production API connected. You can override this URL for local development.</p><input id="api" value="https://reker-solai-api.vercel.app"><button onclick="health()">Check API health</button><div id="healthOut" class="status">Not checked</div></section>
-</div></main>
+<div class="layout">
+ <section class="card">
+  <h2>01 / Register a solar project</h2><p class="muted">Register a project boundary anchor and associate it with the nearest/known substation. This does not confirm electrical connectivity.</p>
+  <div class="fields">
+   <div class="field full"><label>Project name</label><input id="pName" placeholder="e.g. Nalgonda Solar Project"></div>
+   <div class="field"><label>District</label><select id="pDistrict"></select></div>
+   <div class="field"><label>Asset type</label><select id="pType"><option value="ground-mounted">Ground-mounted</option><option value="rooftop">Rooftop</option><option value="floating">Floating</option><option value="hybrid">Hybrid</option></select></div>
+   <div class="field"><label>Installed capacity (MW)</label><input id="pCapacity" type="number" min=".001" step=".001" value="2"></div>
+   <div class="field"><label>Owner / developer</label><input id="pOwner" placeholder="Organisation name"></div>
+   <div class="field"><label>Latitude</label><input id="pLat" type="number" step="any" value="17.385"></div>
+   <div class="field"><label>Longitude</label><input id="pLon" type="number" step="any" value="78.4867"></div>
+   <div class="field full"><label>Associated substation (optional)</label><input id="pSub" placeholder="Name / voltage / utility reference"></div>
+   <div class="field"><label>Commissioning date</label><input id="pDate" type="date"></div>
+   <div class="field"><label>Data status</label><select id="pStatus"><option value="synthetic">Synthetic demo data</option><option value="owner-provided">Owner-provided</option><option value="utility-provided">Utility-provided (authorised)</option></select></div>
+  </div>
+  <div class="actions"><button class="btn" onclick="createProject()">Register project</button><button class="btn secondary" onclick="useMapCenter()">Use map centre</button></div>
+  <div class="status" id="registerStatus"></div>
+ </section>
+ <section class="card">
+  <h2>02 / Generation evidence</h2><p class="muted">Upload interval meter readings as CSV. Required columns: timestamp, energy_mwh, meter_id. Optional: reading_type (generation or grid-export), source.</p>
+  <div class="field"><label>Select project</label><select id="meterProject" onchange="loadProjectMeters()"><option value="">Register a project first</option></select></div>
+  <div class="field"><label>Meter CSV file</label><input id="meterFile" type="file" accept=".csv,text/csv"></div>
+  <div class="actions"><button class="btn" onclick="uploadMeters()">Upload meter data</button><button class="btn secondary" onclick="downloadTemplate()">Get CSV template</button></div>
+  <div class="status" id="meterStatus"></div>
+  <div class="muted" style="margin-top:12px">Duplicate meter/timestamp/type combinations are skipped. Keep original meter exports and calibration certificates for the audit evidence pack.</div>
+  <div class="tablewrap"><table><thead><tr><th>Timestamp</th><th>Meter</th><th>Type</th><th>Energy MWh</th></tr></thead><tbody id="meterRows"><tr><td colspan="4" class="empty">Select a project to view uploaded readings.</td></tr></tbody></table></div>
+ </section>
+ <section class="card">
+  <h2>03 / Indicative carbon calculation</h2><p class="muted">Uses uploaded meter values and a user-supplied, cited emission factor. Choose generation or grid export as the energy basis according to the methodology being assessed.</p>
+  <div class="field"><label>Project</label><select id="mrvProject"><option value="">Register a project first</option></select></div>
+  <div class="fields">
+   <div class="field"><label>Eligible energy basis</label><select id="energyBasis"><option value="grid-export">Grid export</option><option value="generation">Generation</option></select></div>
+   <div class="field"><label>Grid factor (tCO₂e/MWh)</label><input id="factor" type="number" min=".0001" max="2" step=".0001" value="0.7"></div>
+   <div class="field"><label>Factor source / reference</label><input id="factorSource" value="Replace with official source citation"></div>
+   <div class="field"><label>Factor vintage</label><input id="factorVintage" value="2026"></div>
+   <div class="field"><label>Project emissions (tCO₂e)</label><input id="projectEmissions" type="number" min="0" step=".001" value="0"></div>
+   <div class="field"><label>Leakage (tCO₂e)</label><input id="leakage" type="number" min="0" step=".001" value="0"></div>
+  </div>
+  <div class="field"><label>Methodology / screening basis</label><input id="methodName" value="Indicative grid-displacement screening"></div>
+  <div class="actions"><button class="btn" onclick="calculateMRV()">Calculate indicative impact</button></div>
+  <div class="status" id="mrvStatus"></div>
+  <div class="resultgrid" id="mrvResults"><div class="result"><b>—</b><span>Eligible MWh</span></div><div class="result"><b>—</b><span>Baseline tCO₂e</span></div><div class="result"><b>—</b><span>Net indicative tCO₂e</span></div></div>
+  <pre id="mrvDetail">No calculation yet.</pre>
+ </section>
+ <section class="card">
+  <h2>04 / Project register & audit</h2><p class="muted">Projects created in this running demo instance. Open a project to inspect its evidence and audit events.</p>
+  <div class="tablewrap"><table><thead><tr><th>Project</th><th>District</th><th>Capacity MW</th><th>MRV status</th><th>Data</th></tr></thead><tbody id="projectRows"><tr><td colspan="5" class="empty">No projects registered.</td></tr></tbody></table></div>
+  <div class="actions"><button class="btn secondary" onclick="showAudit()">View selected project audit</button></div><pre id="auditOut">Select a project to inspect its audit trail.</pre>
+ </section>
+</div>
+<div class="footer">Reker SolAI · Telangana solar climate intelligence · TRL 8 is a development target, not a certification or current claim.</div>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const el=id=>document.getElementById(id), api=()=>el('api').value.replace(/\/$/,'');
-let stateConfig={};
-async function loadDistricts(){const state=el('state').value;const cfg=stateConfig[state];if(!cfg){el('district').innerHTML='<option>Connect API to load districts</option>';return}el('district').innerHTML=cfg.districts.map(d=>'<option>'+d+'</option>').join('');el('stateNote').textContent=state==='Telangana'?'Primary implementation and demo priority':'Next expansion state · shared assessment engine';el('site').value=(state==='Telangana'?'TS':'KA')+'-SAMPLE-01'}
-async function loadStates(){try{const r=await fetch(api()+'/api/v1/states');const j=await r.json();stateConfig=j.states;await loadDistricts()}catch(e){el('district').innerHTML='<option>Start API to load districts</option>';el('stateNote').textContent='API not connected; Telangana remains the default demo state'}}
-async function post(path,data){const r=await fetch(api()+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const j=await r.json();if(!r.ok)throw new Error(j.detail||JSON.stringify(j));return j}
-async function score(){el('scoreStatus').textContent='Calculating…';try{const n=id=>Number(el(id).value);const result=await post('/api/v1/sites/score',{state:el('state').value,district:el('district').value,sites:[{site_id:el('site').value,label:'Candidate site',usable_area_m2:n('area'),land_availability:n('land'),shading:n('shade'),slope:n('slope'),flood_safety:n('flood'),grid_proximity:n('grid'),data_status:'synthetic'}]});el('scoreOut').textContent=JSON.stringify(result,null,2);el('scoreStatus').textContent='Screening complete · '+result.state+' · '+result.methodology_version}catch(e){el('scoreStatus').textContent='API error: '+e.message}}
-async function estimate(){el('solarStatus').textContent='Calculating…';try{const n=id=>Number(el(id).value);const result=await post('/api/v1/solar/estimate',{usable_area_m2:n('solarArea'),installed_density_w_per_m2:n('density'),specific_yield_mwh_per_mw_year:n('yield'),grid_emission_factor_tco2e_per_mwh:n('factor')});el('solarOut').textContent=JSON.stringify(result,null,2);el('kpis').innerHTML='<div class="kpi"><b>'+result.estimated_capacity_mw_dc+'</b><span>Estimated MW DC</span></div><div class="kpi"><b>'+result.estimated_annual_generation_mwh.toLocaleString()+'</b><span>Annual MWh</span></div><div class="kpi"><b>'+result.estimated_avoided_emissions_tco2e_per_year.toLocaleString()+'</b><span>Estimated tCO₂e/year</span></div>';el('solarStatus').textContent='Estimate complete · '+result.validation_status}catch(e){el('solarStatus').textContent='API error: '+e.message}}
-async function health(){try{const r=await fetch(api()+'/health');const j=await r.json();el('healthOut').textContent='Connected · '+j.status+' · '+j.timestamp;await loadStates()}catch(e){el('healthOut').textContent='Not connected: '+e.message}}
-
-let stationRecords=[],stationMarkers=[],stationMap=null,stationLayer=null;
-const GIS_QUERY='https://tgrac.telangana.gov.in/arcgis/rest/services/RRR_Folder/RRR/MapServer/8/query';
-function initStationMap(){
- if(stationMap)return;
- if(!window.L){el('mapStatus').textContent='Map library did not load. Check internet access and refresh.';return}
- stationMap=L.map('substationMap').setView([17.85,79.1],7);
- L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(stationMap);
- stationLayer=L.layerGroup().addTo(stationMap);
-}
-function attr(a,...keys){for(const k of keys){if(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=='')return String(a[k])}return 'Not published'}
-async function loadSubstations(){
- el('mapStatus').textContent='Fetching mapped substation records from TGRAC…';
- el('stationRows').innerHTML='<tr><td colspan="5">Loading…</td></tr>';
- try{
-  const u=GIS_QUERY+'?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=json';
-  const r=await fetch(u);if(!r.ok)throw new Error('GIS service HTTP '+r.status);
-  const j=await r.json();if(j.error)throw new Error(j.error.message||'GIS service returned an error');
-  stationRecords=(j.features||[]).map((f,i)=>{const a=f.attributes||{},g=f.geometry||{};const lat=Number(a.Latitude??a.LATITUDE??g.y),lon=Number(a.Londitude??a.Longitude??a.LONGITUDE??g.x);return {id:a.FID??i,name:attr(a,'Name of Su','Name_of_Su','NAME','Name'),voltage:attr(a,'Voltage le','Voltage_level','Voltage'),location:attr(a,'Location (','Location','ADDRESS'),type:attr(a,'Type of Su','Type_of_Su','Type'),owner:attr(a,'Owner'),status:attr(a,'Status'),lat,lon,raw:a}}).filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon)&&x.lat>15&&x.lat<20&&x.lon>77&&x.lon<82);
-  initStationMap();if(stationLayer)stationLayer.clearLayers();
-  stationRecords.forEach(s=>{const m=L.circleMarker([s.lat,s.lon],{radius:6,color:'#075e50',weight:1.5,fillColor:'#16a085',fillOpacity:.9});m.bindPopup('<b>'+escapeHtml(s.name)+'</b><br>Voltage: '+escapeHtml(s.voltage)+'<br>Location: '+escapeHtml(s.location)+'<br>Type: '+escapeHtml(s.type)+'<br>Owner: '+escapeHtml(s.owner)+'<br>Status: '+escapeHtml(s.status)+'<br>Coordinates: '+s.lat.toFixed(5)+', '+s.lon.toFixed(5));m.addTo(stationLayer);s.marker=m});
-  const bounds=stationRecords.map(s=>[s.lat,s.lon]);if(bounds.length)stationMap.fitBounds(bounds,{padding:[24,24],maxZoom:8});
-  const volts=[...new Set(stationRecords.map(s=>s.voltage).filter(v=>v!=='Not published'))].sort();el('voltageFilter').innerHTML='<option value="">All voltage levels</option>'+volts.map(v=>'<option>'+escapeHtml(v)+'</option>').join('');
-  el('stationCount').textContent=stationRecords.length+' mapped substation records';
-  el('mapStatus').textContent='Loaded '+stationRecords.length+' mapped point records from the TGRAC RRR electric-transmission layer. Attributes are as published by the GIS service.';
-  renderStationList();
- }catch(e){el('stationCount').textContent='GIS layer unavailable';el('mapStatus').textContent='Could not load live GIS records: '+e.message+'. The layer may be temporarily unavailable or block browser cross-origin requests. We have not substituted invented coordinates.';el('stationRows').innerHTML='<tr><td colspan="5">No records loaded. Try Refresh map later.</td></tr>'}
-}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
-function renderStationList(){
- const q=(el('stationSearch').value||'').toLowerCase(),v=el('voltageFilter').value;
- const rows=stationRecords.filter(s=>(!v||s.voltage===v)&&[s.name,s.location,s.voltage,s.owner].join(' ').toLowerCase().includes(q));
- el('stationRows').innerHTML=rows.slice(0,250).map(s=>'<tr><td><a href="#" onclick="focusStation('+JSON.stringify(String(s.id))+');return false">'+escapeHtml(s.name)+'</a></td><td>'+escapeHtml(s.voltage)+'</td><td>'+escapeHtml(s.location)+'</td><td>'+escapeHtml(s.owner)+'</td><td>'+escapeHtml(s.status)+'</td></tr>').join('')||'<tr><td colspan="5">No matching records</td></tr>';
-}
-function focusStation(id){const s=stationRecords.find(x=>String(x.id)===String(id));if(s&&stationMap){stationMap.setView([s.lat,s.lon],13);s.marker.openPopup()}}
-
-loadStates();
-loadSubstations();
-</script></body></html>
+const API=(window.SOLAI_API_URL||'https://reker-solai-api.vercel.app').replace(/\/$/,'');
+const $=id=>document.getElementById(id);
+let map,subLayer,projectLayer,projects=[],selectedProject='',substations=[];
+const districts=["Adilabad","Bhadradri Kothagudem","Hanamkonda","Hyderabad","Jagtial","Jangaon","Jayashankar Bhupalpally","Jogulamba Gadwal","Kamareddy","Karimnagar","Khammam","Kumuram Bheem Asifabad","Mahabubabad","Mahabubnagar","Mancherial","Medak","Medchal-Malkajgiri","Mulugu","Nagarkurnool","Nalgonda","Narayanpet","Nirmal","Nizamabad","Peddapalli","Rajanna Sircilla","Rangareddy","Sangareddy","Siddipet","Suryapet","Vikarabad","Wanaparthy","Warangal","Yadadri Bhuvanagiri"];
+function initMap(){map=L.map('map').setView([17.85,79.1],7);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors · © CARTO'}).addTo(map);subLayer=L.layerGroup().addTo(map);projectLayer=L.layerGroup().addTo(map);map.on('click',e=>{$('pLat').value=e.latlng.lat.toFixed(6);$('pLon').value=e.latlng.lng.toFixed(6);$('registerStatus').textContent='Coordinates set from map click. Confirm project boundary before registration.'})}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function api(path,opts={}){const r=await fetch(API+path,opts);let j;try{j=await r.json()}catch{j={detail:'Invalid API response'}}if(!r.ok)throw new Error(j.detail||('HTTP '+r.status));return j}
+function fillDistricts(){$('pDistrict').innerHTML=districts.map(d=>'<option>'+esc(d)+'</option>').join('')}
+async function refreshAll(){await Promise.all([loadDashboard(),loadProjects(),loadSubstations()])}
+async function loadDashboard(){try{const d=await api('/api/v1/dashboard');$('projectCount').textContent=d.projects_registered;$('meterCount').textContent=d.meter_records;$('generation').textContent=Number(d.generation_mwh).toLocaleString();$('exports').textContent=Number(d.grid_export_mwh).toLocaleString()}catch(e){$('mapStatus').textContent='API connection error: '+e.message}}
+async function loadProjects(){try{projects=await api('/api/v1/projects');$('projectRows').innerHTML=projects.map(p=>'<tr><td><a href="#" onclick="selectProject(\''+p.project_id+'\');return false">'+esc(p.name)+'</a></td><td>'+esc(p.district)+'</td><td>'+esc(p.capacity_mw)+'</td><td>'+esc(p.mrv_status)+'</td><td>'+esc(p.data_status)+'</td></tr>').join('')||'<tr><td colspan="5" class="empty">No projects registered.</td></tr>';$('meterProject').innerHTML=projects.map(p=>'<option value="'+p.project_id+'">'+esc(p.name)+'</option>').join('')||'<option value="">Register a project first</option>';$('mrvProject').innerHTML=$('meterProject').innerHTML;if(selectedProject&&projects.some(p=>p.project_id===selectedProject)){$('meterProject').value=selectedProject;$('mrvProject').value=selectedProject}drawProjects()}catch(e){$('registerStatus').textContent='Could not load projects: '+e.message}}
+function drawProjects(){projectLayer.clearLayers();projects.forEach(p=>{const m=L.circleMarker([p.latitude,p.longitude],{radius:8,color:'#064f43',fillColor:'#16a085',fillOpacity:1,weight:2});m.bindPopup('<b>'+esc(p.name)+'</b><br>'+esc(p.district)+'<br>'+esc(p.capacity_mw)+' MW · '+esc(p.mrv_status));m.addTo(projectLayer)}) $('projectMapCount').textContent=projects.length+' SolAI projects'}
+async function loadSubstations(){const url='https://tgrac.telangana.gov.in/arcgis/rest/services/RRR_Folder/RRR/MapServer/8/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=json';try{const r=await fetch(url);if(!r.ok)throw Error('GIS HTTP '+r.status);const j=await r.json();if(j.error)throw Error(j.error.message);substations=(j.features||[]).map((f,i)=>{const a=f.attributes||{},g=f.geometry||{};return{id:a.FID??i,name:a['Name of Su']||a.Name_of_Su||a.NAME||'Unnamed substation',voltage:a['Voltage le']||a.Voltage_level||a.Voltage||'Not published',lat:Number(a.Latitude??g.y),lon:Number(a.Londitude??a.Longitude??g.x)}}).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lon)&&s.lat>15&&s.lat<20.5&&s.lon>77&&s.lon<82);subLayer.clearLayers();substations.forEach(s=>L.circleMarker([s.lat,s.lon],{radius:4,color:'#ad7b28',fillColor:'#e5b95d',fillOpacity:.9,weight:1}).bindPopup('<b>'+esc(s.name)+'</b><br>Voltage: '+esc(s.voltage)+'<br><small>Public GIS context only; utility validation pending.</small>').addTo(subLayer));$('subCount').textContent=substations.length+' mapped substation points';$('mapStatus').textContent='Public TGRAC GIS layer loaded. Confirm each asset with the relevant utility; mapped features do not establish operational status or grid connection.'}catch(e){$('subCount').textContent='Public GIS unavailable';$('mapStatus').textContent='Substation GIS could not be loaded in this browser session: '+e.message+'. Registered project pins remain available; no substitute locations have been fabricated.'}}
+async function createProject(){const body={name:$('pName').value,district:$('pDistrict').value,asset_type:$('pType').value,capacity_mw:Number($('pCapacity').value),latitude:Number($('pLat').value),longitude:Number($('pLon').value),substation_name:$('pSub').value||null,owner:$('pOwner').value||null,commissioning_date:$('pDate').value||null,data_status:$('pStatus').value};$('registerStatus').textContent='Registering…';try{const p=await api('/api/v1/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});selectedProject=p.project_id;$('registerStatus').textContent='Registered · '+p.project_id+' · status: registered-unverified';await refreshAll();$('meterProject').value=p.project_id;$('mrvProject').value=p.project_id}catch(e){$('registerStatus').textContent='Registration failed: '+e.message}}
+function selectProject(id){selectedProject=id;$('meterProject').value=id;$('mrvProject').value=id;loadProjectMeters();$('auditOut').textContent='Project selected. Click “View selected project audit” to load events.'}
+async function loadProjectMeters(){const id=$('meterProject').value;if(!id)return;selectedProject=id;try{const d=await api('/api/v1/projects/'+id+'/meter-readings');$('meterRows').innerHTML=d.readings.slice(-100).reverse().map(r=>'<tr><td>'+esc(r.timestamp)+'</td><td>'+esc(r.meter_id)+'</td><td>'+esc(r.reading_type)+'</td><td>'+esc(r.energy_mwh)+'</td></tr>').join('')||'<tr><td colspan="4" class="empty">No readings uploaded.</td></tr>'}catch(e){$('meterStatus').textContent=e.message}}
+async function uploadMeters(){const id=$('meterProject').value,file=$('meterFile').files[0];if(!id||!file){$('meterStatus').textContent='Select a project and CSV file.';return}const fd=new FormData();fd.append('file',file);$('meterStatus').textContent='Uploading and validating CSV…';try{const d=await api('/api/v1/projects/'+id+'/meter-csv',{method:'POST',body:fd});$('meterStatus').textContent='Accepted '+d.accepted+' rows · skipped duplicates '+d.duplicates_skipped+' · total '+d.total_records;await loadProjectMeters();await loadDashboard();await loadProjects()}catch(e){$('meterStatus').textContent='Upload failed: '+e.message}}
+function downloadTemplate(){const csv='timestamp,energy_mwh,meter_id,reading_type,source\n2026-10-01T00:00:00Z,12.5,GEN-01,generation,example-meter-export\n2026-10-01T00:00:00Z,11.8,EXP-01,grid-export,example-meter-export\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='solai-meter-template.csv';a.click();URL.revokeObjectURL(a.href)}
+async function calculateMRV(){const id=$('mrvProject').value;if(!id){$('mrvStatus').textContent='Register/select a project first.';return}const body={grid_emission_factor_tco2e_per_mwh:Number($('factor').value),factor_source:$('factorSource').value,factor_vintage:$('factorVintage').value,project_emissions_tco2e:Number($('projectEmissions').value),leakage_tco2e:Number($('leakage').value),eligible_energy_basis:$('energyBasis').value,methodology_name:$('methodName').value};$('mrvStatus').textContent='Calculating…';try{const d=await api('/api/v1/projects/'+id+'/mrv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});$('mrvResults').innerHTML='<div class="result"><b>'+d.eligible_energy_mwh.toLocaleString()+'</b><span>Eligible MWh</span></div><div class="result"><b>'+d.baseline_emissions_tco2e.toLocaleString()+'</b><span>Baseline tCO₂e</span></div><div class="result"><b>'+d.indicative_net_avoided_emissions_tco2e.toLocaleString()+'</b><span>Indicative net tCO₂e</span></div>';$('mrvDetail').textContent=JSON.stringify(d,null,2);$('mrvStatus').textContent='Calculation complete · '+d.status+' · '+d.credit_issuance_status;await loadProjects()}catch(e){$('mrvStatus').textContent='Calculation failed: '+e.message}}
+async function showAudit(){const id=$('mrvProject').value||$('meterProject').value;if(!id){$('auditOut').textContent='Select a project first.';return}try{$('auditOut').textContent=JSON.stringify(await api('/api/v1/projects/'+id+'/audit'),null,2)}catch(e){$('auditOut').textContent=e.message}}
+function useMapCenter(){const c=map.getCenter();$('pLat').value=c.lat.toFixed(6);$('pLon').value=c.lng.toFixed(6)}
+$('mapSearch').addEventListener('input',()=>{const q=$('mapSearch').value.toLowerCase();projectLayer.clearLayers();projects.filter(p=>p.name.toLowerCase().includes(q)||p.district.toLowerCase().includes(q)).forEach(p=>L.circleMarker([p.latitude,p.longitude],{radius:8,color:'#064f43',fillColor:'#16a085',fillOpacity:1}).bindPopup(esc(p.name)+' · '+esc(p.capacity_mw)+' MW').addTo(projectLayer))});
+fillDistricts();initMap();refreshAll();setInterval(loadDashboard,30000);
+</script>
+</body></html>
