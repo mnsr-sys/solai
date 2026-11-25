@@ -12,7 +12,7 @@ Apply the schema:
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/migrations/001_postgis_foundation.sql
 ```
 
-The migration creates the `solai` schema and source registry, source-preserving vector feature store, substations, candidate sites, solar projects, meter readings and audit events. Spatial indexes are created for geometry columns.
+The migration creates the `solai` schema and source registry, source-preserving vector feature store, substations, candidate sites, solar projects, meter readings and audit events. Spatial indexes are created for geometry columns. The metadata seed records the re-extracted Hyderabad coverage and feature counts, explicitly marked `binary_imported=false`; it is not a claim that the actual GIS features are already in PostGIS.
 
 ## 2. GIS file ingestion
 
@@ -22,6 +22,8 @@ Example (GeoPackage may contain several named layers; inspect first):
 
 ```bash
 ogrinfo -so -al hyderabad-land-water.gpkg
+psql "$DATABASE_URL" -c "CREATE SCHEMA IF NOT EXISTS solai_staging;"
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/seeds/001_hyderabad_extract_metadata.sql
 ogr2ogr -f PostgreSQL "PG:$DATABASE_URL" hyderabad-land-water.gpkg \
   -nln solai_staging.landuse -lco SCHEMA=solai_staging \
   -lco GEOMETRY_NAME=geom -lco FID=source_feature_id
