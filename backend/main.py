@@ -369,6 +369,57 @@ def project_audit(project_id: str):
         raise HTTPException(status_code=404, detail="Project not found")
     return [e for e in audit_events if e["entity_id"] == project_id]
 
+
+
+@app.get("/api/v1/map/substations")
+def map_substations():
+    """Fetch all records exposed by the TGRAC RRR substation layer, in safe batches."""
+    base = "https://tgrac.telangana.gov.in/arcgis/rest/services/RRR_Folder/RRR/MapServer/8"
+    try:
+        ids_response = httpx.get(
+            f"{base}/query",
+            params={"where": "1=1", "returnIdsOnly": "true", "f": "json"},
+            timeout=25.0,
+        )
+        ids_response.raise_for_status()
+        ids_payload = ids_response.json()
+        if ids_payload.get("error"):
+            raise ValueError("TGRAC ArcGIS returned an error.")
+        object_ids = ids_payload.get("objectIds") or []
+        features = []
+        # ArcGIS layer advertises MaxRecordCount=1000; use smaller pages for reliability.
+        for offset in range(0, len(object_ids), 500):
+            batch = object_ids[offset:offset + 500]
+            response = httpx.get(
+                f"{base}/query",
+                params={
+                    "objectIds": ",".join(str(value) for value in batch),
+                    "outFields": "*",
+                    "returnGeometry": "true",
+                    "outSR": "4326",
+                    "f": "json",
+                },
+                timeout=30.0,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if payload.get("error"):
+                raise ValueError("TGRAC ArcGIS feature query failed.")
+            features.extend(payload.get("features") or [])
+        return {
+            "source": "TGRAC public ArcGIS RRR Electric Transmission / Sub Stations layer (8)",
+            "source_url": f"{base}",
+            "source_record_count": len(object_ids),
+            "returned_count": len(features),
+            "complete_for_source_layer": len(features) == len(object_ids),
+            "geometry_spatial_reference": "EPSG:4326",
+            "features": features,
+            "notice": "All records exposed by this TGRAC RRR substation layer are returned. This is not a certified statewide inventory of every Telangana substation; validate asset identity, operational status, voltage, ownership and grid capacity with the relevant utility.",
+        }
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
+        raise HTTPException(status_code=502, detail="TGRAC substation service unavailable or returned incomplete data.") from exc
+
+
 @app.get("/api/v1/map/layers")
 def map_layers():
     return {
