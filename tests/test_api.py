@@ -11,8 +11,41 @@ def test_health():
     assert response.json()["status"] == "ok"
 
 
-def test_score_sites_ranks_higher_score_first():
+def test_state_catalog_prioritizes_telangan_and_includes_karnataka():
+    response = client.get("/api/v1/states")
+    assert response.status_code == 200
+    result = response.json()
+    assert result["default_state"] == "Telangana"
+    assert result["priority_order"] == ["Telangana", "Karnataka"]
+    assert "Hyderabad" in result["states"]["Telangana"]["districts"]
+    assert "Bengaluru Urban" in result["states"]["Karnataka"]["districts"]
+
+
+def test_project_accepts_karnataka_demo_district():
+    response = client.post("/api/v1/projects", json={
+        "name": "Karnataka sample assessment",
+        "state": "Karnataka",
+        "district": "Bengaluru Urban",
+        "data_status": "synthetic"
+    })
+    assert response.status_code == 201
+    assert response.json()["state"] == "Karnataka"
+
+
+def test_project_rejects_unknown_district_for_selected_state():
+    response = client.post("/api/v1/projects", json={
+        "name": "Invalid district test",
+        "state": "Telangana",
+        "district": "Bengaluru Urban",
+        "data_status": "synthetic"
+    })
+    assert response.status_code == 422
+
+
+def test_score_sites_ranks_higher_score_first_and_returns_geography():
     payload = {
+        "state": "Telangana",
+        "district": "Hyderabad",
         "sites": [
             {
                 "site_id": "A",
@@ -40,7 +73,10 @@ def test_score_sites_ranks_higher_score_first():
     }
     response = client.post("/api/v1/sites/score", json=payload)
     assert response.status_code == 200
-    ranked = response.json()["ranked_sites"]
+    result = response.json()
+    ranked = result["ranked_sites"]
+    assert result["state"] == "Telangana"
+    assert result["district"] == "Hyderabad"
     assert ranked[0]["site_id"] == "A"
     assert ranked[0]["suitability_score"] > ranked[1]["suitability_score"]
 
