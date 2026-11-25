@@ -8,7 +8,8 @@ from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field\nimport httpx
+from pydantic import BaseModel, Field
+import httpx
 
 DISTRICTS = [
     "Adilabad", "Bhadradri Kothagudem", "Hanamkonda", "Hyderabad",
