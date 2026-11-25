@@ -6,8 +6,10 @@
 <title>Reker SolAI | Solar Substation Assessment</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,system-ui;background:#f4f7f8;color:#14212b}*{box-sizing:border-box}body{margin:0}.top{background:#102a35;color:white;padding:28px max(22px,calc((100% - 1120px)/2))}.top small{color:#9ed4c3;letter-spacing:.12em;text-transform:uppercase}.top h1{margin:8px 0;font-size:30px}.top p{color:#c5d5d9;margin:0}.wrap{max-width:1120px;margin:26px auto;padding:0 20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:white;border:1px solid #dce5e8;border-radius:14px;padding:20px;box-shadow:0 4px 18px #17313b0a}.card h2{font-size:18px;margin:0 0 14px}.muted{color:#61727c;font-size:13px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{display:block;font-size:12px;color:#52636d;margin-bottom:5px}input,select{width:100%;padding:10px;border:1px solid #ccd8dc;border-radius:8px;font:inherit;background:white}button{background:#087e68;color:white;border:0;border-radius:8px;padding:11px 16px;font-weight:650;cursor:pointer;margin-top:14px}button:hover{background:#066754}.full{grid-column:1/-1}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.kpi{background:#eef7f4;border-radius:10px;padding:14px}.kpi b{display:block;font-size:22px;color:#086b59}.kpi span{font-size:12px;color:#60736d}.notice{background:#fff8e8;border:1px solid #f0dfb8;padding:12px;border-radius:9px;font-size:12px;color:#755a20;margin-top:14px}.statebar{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#fff;border:1px solid #dce5e8;border-radius:12px;padding:16px;margin-top:18px}.statebar strong{display:block;margin-bottom:5px}.statebar .muted{margin-top:6px}pre{white-space:pre-wrap;word-break:break-word;background:#f4f7f8;padding:12px;border-radius:8px;font-size:12px;max-height:230px;overflow:auto}.status{font-size:12px;margin-top:10px;color:#52636d}@media(max-width:700px){.grid,.statebar{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.kpis{grid-template-columns:1fr}}
+
+#mapCard{margin-top:18px}.maphead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.maptools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.maptools input,.maptools select{width:auto;min-width:150px}.mapframe{height:520px;border-radius:12px;overflow:hidden;border:1px solid #dce5e8;margin-top:12px}#substationMap{height:100%;width:100%}.mapmeta{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}.pill{background:#eef7f4;border-radius:99px;padding:6px 10px;font-size:12px;color:#176451}.source-note{font-size:12px;color:#687983;margin-top:10px;line-height:1.5}.station-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}.station-table th,.station-table td{text-align:left;padding:9px;border-bottom:1px solid #e8eef0}.station-table th{color:#52636d;background:#f7f9fa}.tablewrap{max-height:250px;overflow:auto}.leaflet-popup-content{font:13px Inter,system-ui;line-height:1.5}@media(max-width:700px){.mapframe{height:420px}.maptools input,.maptools select{width:100%}}
 </style>
-</head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script></head>
 <body>
 <header class="top"><small>REKER · CLIMATE INTELLIGENCE</small><h1>SolAI — Solar Substation Assessment</h1><p>Telangana first. Karnataka next. One transparent screening and dMRV workflow.</p></header>
 <main class="wrap">
@@ -15,6 +17,16 @@
 <section class="statebar">
 <div><strong>Assessment geography</strong><label for="state">State</label><select id="state" onchange="loadDistricts()"><option value="Telangana" selected>Telangana · Primary demo</option><option value="Karnataka">Karnataka · Next expansion</option></select><div class="muted" id="stateNote">Primary implementation priority</div></div>
 <div><strong>District</strong><label for="district">Select district</label><select id="district"><option>Loading districts…</option></select><div class="muted">Options are starter selectors, not verified site coverage.</div></div>
+</section>
+
+<section class="card" id="mapCard">
+ <div class="maphead"><div><h2>Telangana substation map</h2><p class="muted">Explore mapped substations and open their recorded attributes. Telangana is the primary demo geography.</p></div>
+ <div class="maptools"><input id="stationSearch" placeholder="Search substation / district" oninput="renderStationList()"><select id="voltageFilter" onchange="renderStationList()"><option value="">All voltage levels</option></select><button style="margin:0" onclick="loadSubstations()">Refresh map</button></div></div>
+ <div class="mapmeta"><span class="pill" id="stationCount">Loading GIS layer…</span><span class="pill">Source: TGRAC ArcGIS · public GIS layer</span><span class="pill">Markers represent mapped records, not solar suitability</span></div>
+ <div class="mapframe"><div id="substationMap"></div></div>
+ <div class="source-note" id="mapStatus">Connecting to Telangana GIS…</div>
+ <div class="tablewrap"><table class="station-table"><thead><tr><th>Substation</th><th>Voltage</th><th>Location</th><th>Owner</th><th>Status</th></tr></thead><tbody id="stationRows"><tr><td colspan="5">Loading records…</td></tr></tbody></table></div>
+ <p class="source-note">Coverage caveat: this is the published TGRAC RRR electric-transmission substation layer, not a certified, exhaustive statewide TSTRANSCO inventory. Some records may lack voltage, location or ownership fields. Coordinates and attributes are shown as published; confirm with the utility before site selection. Map tiles © OpenStreetMap contributors.</p>
 </section>
 <div class="grid" style="margin-top:18px">
 <section class="card"><h2>1. Candidate site screening</h2><p class="muted">Enter five 0–100 suitability scores. Higher is better for every criterion.</p>
@@ -45,5 +57,42 @@ async function post(path,data){const r=await fetch(api()+path,{method:'POST',hea
 async function score(){el('scoreStatus').textContent='Calculating…';try{const n=id=>Number(el(id).value);const result=await post('/api/v1/sites/score',{state:el('state').value,district:el('district').value,sites:[{site_id:el('site').value,label:'Candidate site',usable_area_m2:n('area'),land_availability:n('land'),shading:n('shade'),slope:n('slope'),flood_safety:n('flood'),grid_proximity:n('grid'),data_status:'synthetic'}]});el('scoreOut').textContent=JSON.stringify(result,null,2);el('scoreStatus').textContent='Screening complete · '+result.state+' · '+result.methodology_version}catch(e){el('scoreStatus').textContent='API error: '+e.message}}
 async function estimate(){el('solarStatus').textContent='Calculating…';try{const n=id=>Number(el(id).value);const result=await post('/api/v1/solar/estimate',{usable_area_m2:n('solarArea'),installed_density_w_per_m2:n('density'),specific_yield_mwh_per_mw_year:n('yield'),grid_emission_factor_tco2e_per_mwh:n('factor')});el('solarOut').textContent=JSON.stringify(result,null,2);el('kpis').innerHTML='<div class="kpi"><b>'+result.estimated_capacity_mw_dc+'</b><span>Estimated MW DC</span></div><div class="kpi"><b>'+result.estimated_annual_generation_mwh.toLocaleString()+'</b><span>Annual MWh</span></div><div class="kpi"><b>'+result.estimated_avoided_emissions_tco2e_per_year.toLocaleString()+'</b><span>Estimated tCO₂e/year</span></div>';el('solarStatus').textContent='Estimate complete · '+result.validation_status}catch(e){el('solarStatus').textContent='API error: '+e.message}}
 async function health(){try{const r=await fetch(api()+'/health');const j=await r.json();el('healthOut').textContent='Connected · '+j.status+' · '+j.timestamp;await loadStates()}catch(e){el('healthOut').textContent='Not connected: '+e.message}}
+
+let stationRecords=[],stationMarkers=[],stationMap=null,stationLayer=null;
+const GIS_QUERY='https://tgrac.telangana.gov.in/arcgis/rest/services/RRR_Folder/RRR/MapServer/8/query';
+function initStationMap(){
+ if(stationMap)return;
+ if(!window.L){el('mapStatus').textContent='Map library did not load. Check internet access and refresh.';return}
+ stationMap=L.map('substationMap').setView([17.85,79.1],7);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(stationMap);
+ stationLayer=L.layerGroup().addTo(stationMap);
+}
+function attr(a,...keys){for(const k of keys){if(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=='')return String(a[k])}return 'Not published'}
+async function loadSubstations(){
+ el('mapStatus').textContent='Fetching mapped substation records from TGRAC…';
+ el('stationRows').innerHTML='<tr><td colspan="5">Loading…</td></tr>';
+ try{
+  const u=GIS_QUERY+'?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=json';
+  const r=await fetch(u);if(!r.ok)throw new Error('GIS service HTTP '+r.status);
+  const j=await r.json();if(j.error)throw new Error(j.error.message||'GIS service returned an error');
+  stationRecords=(j.features||[]).map((f,i)=>{const a=f.attributes||{},g=f.geometry||{};const lat=Number(a.Latitude??a.LATITUDE??g.y),lon=Number(a.Londitude??a.Longitude??a.LONGITUDE??g.x);return {id:a.FID??i,name:attr(a,'Name of Su','Name_of_Su','NAME','Name'),voltage:attr(a,'Voltage le','Voltage_level','Voltage'),location:attr(a,'Location (','Location','ADDRESS'),type:attr(a,'Type of Su','Type_of_Su','Type'),owner:attr(a,'Owner'),status:attr(a,'Status'),lat,lon,raw:a}}).filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon)&&x.lat>15&&x.lat<20&&x.lon>77&&x.lon<82);
+  initStationMap();if(stationLayer)stationLayer.clearLayers();
+  stationRecords.forEach(s=>{const m=L.circleMarker([s.lat,s.lon],{radius:6,color:'#075e50',weight:1.5,fillColor:'#16a085',fillOpacity:.9});m.bindPopup('<b>'+escapeHtml(s.name)+'</b><br>Voltage: '+escapeHtml(s.voltage)+'<br>Location: '+escapeHtml(s.location)+'<br>Type: '+escapeHtml(s.type)+'<br>Owner: '+escapeHtml(s.owner)+'<br>Status: '+escapeHtml(s.status)+'<br>Coordinates: '+s.lat.toFixed(5)+', '+s.lon.toFixed(5));m.addTo(stationLayer);s.marker=m});
+  const bounds=stationRecords.map(s=>[s.lat,s.lon]);if(bounds.length)stationMap.fitBounds(bounds,{padding:[24,24],maxZoom:8});
+  const volts=[...new Set(stationRecords.map(s=>s.voltage).filter(v=>v!=='Not published'))].sort();el('voltageFilter').innerHTML='<option value="">All voltage levels</option>'+volts.map(v=>'<option>'+escapeHtml(v)+'</option>').join('');
+  el('stationCount').textContent=stationRecords.length+' mapped substation records';
+  el('mapStatus').textContent='Loaded '+stationRecords.length+' mapped point records from the TGRAC RRR electric-transmission layer. Attributes are as published by the GIS service.';
+  renderStationList();
+ }catch(e){el('stationCount').textContent='GIS layer unavailable';el('mapStatus').textContent='Could not load live GIS records: '+e.message+'. The layer may be temporarily unavailable or block browser cross-origin requests. We have not substituted invented coordinates.';el('stationRows').innerHTML='<tr><td colspan="5">No records loaded. Try Refresh map later.</td></tr>'}
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function renderStationList(){
+ const q=(el('stationSearch').value||'').toLowerCase(),v=el('voltageFilter').value;
+ const rows=stationRecords.filter(s=>(!v||s.voltage===v)&&[s.name,s.location,s.voltage,s.owner].join(' ').toLowerCase().includes(q));
+ el('stationRows').innerHTML=rows.slice(0,250).map(s=>'<tr><td><a href="#" onclick="focusStation('+JSON.stringify(String(s.id))+');return false">'+escapeHtml(s.name)+'</a></td><td>'+escapeHtml(s.voltage)+'</td><td>'+escapeHtml(s.location)+'</td><td>'+escapeHtml(s.owner)+'</td><td>'+escapeHtml(s.status)+'</td></tr>').join('')||'<tr><td colspan="5">No matching records</td></tr>';
+}
+function focusStation(id){const s=stationRecords.find(x=>String(x.id)===String(id));if(s&&stationMap){stationMap.setView([s.lat,s.lon],13);s.marker.openPopup()}}
+
 loadStates();
+loadSubstations();
 </script></body></html>
