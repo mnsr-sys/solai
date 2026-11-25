@@ -191,7 +191,7 @@ def solar_resource(
 ):
     """Fetch daily all-sky surface solar irradiation from NASA POWER for a Telangana point."""
     import re
-    if not re.fullmatch(r"\\d{8}", start) or not re.fullmatch(r"\\d{8}", end) or start > end:
+    if not re.fullmatch(r"\d{8}", start) or not re.fullmatch(r"\\d{8}", end) or start > end:
         raise HTTPException(status_code=422, detail="start/end must be ordered YYYYMMDD dates.")
     try:
         response = httpx.get(
