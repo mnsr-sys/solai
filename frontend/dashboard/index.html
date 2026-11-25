@@ -46,7 +46,7 @@
 <div><label>Grid factor (tCO₂e/MWh)</label><input id="factor" type="number" step="0.001" value="0.7"></div>
 </div><button onclick="estimate()">Estimate solar potential</button><div id="solarStatus" class="status">API: waiting</div>
 <div id="kpis" class="kpis" style="margin-top:14px"><div class="kpi"><b>—</b><span>Estimated MW DC</span></div><div class="kpi"><b>—</b><span>Annual MWh</span></div><div class="kpi"><b>—</b><span>tCO₂e/year</span></div></div><pre id="solarOut">No estimate yet.</pre></section>
-<section class="card full"><h2>3. Connect to SolAI API</h2><p class="muted">Start the FastAPI backend locally, then set the API URL below. Default: http://127.0.0.1:8000</p><input id="api" value="http://127.0.0.1:8000"><button onclick="health()">Check API health</button><div id="healthOut" class="status">Not checked</div></section>
+<section class="card full"><h2>3. Connect to SolAI API</h2><p class="muted">Production API connected. You can override this URL for local development.</p><input id="api" value="https://reker-solai-api.vercel.app"><button onclick="health()">Check API health</button><div id="healthOut" class="status">Not checked</div></section>
 </div></main>
 <script>
 const el=id=>document.getElementById(id), api=()=>el('api').value.replace(/\/$/,'');
