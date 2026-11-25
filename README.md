@@ -77,7 +77,7 @@ Current demo endpoints:
 - `POST /api/v1/projects/{project_id}/meter-readings`
 - `POST /api/v1/projects/{project_id}/meter-csv`
 - `GET /api/v1/projects/{project_id}/meter-readings`
-- `POST /api/v1/sites/score`\n- `POST /api/v1/solar/potential`\n- `POST /api/v1/projects/{project_id}/mrv`
+- `POST /api/v1/sites/score`\n- `GET /api/v1/solar/resource?lat=17.360588&lon=78.474061&start=20250101&end=20251231` (NASA POWER resource screen)\n- `POST /api/v1/solar/potential`\n- `POST /api/v1/projects/{project_id}/mrv`
 - `GET /api/v1/projects/{project_id}/audit`
 - `GET /api/v1/map/layers`
 
@@ -93,7 +93,7 @@ Current demo endpoints:
 - SolAI must label estimated reductions, methodology-screened potential, validated reductions and issued credits as distinct statuses.
 - Independent validation and verification, registry approval and issuance are performed by the relevant authorised bodies—not by SolAI.
 
-See [docs/TERRALAB_DATA_REGISTER.md](docs/TERRALAB_DATA_REGISTER.md) for the initial geospatial extract, substation sources and Telangana expansion requirements. See [docs/METHODOLOGY.md](docs/METHODOLOGY.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/CARBON_MRV_FRAMEWORK.md](docs/CARBON_MRV_FRAMEWORK.md).
+See [docs/CASE_STUDY_HYDERABAD.md](docs/CASE_STUDY_HYDERABAD.md) for the first end-to-end site-screening demo protocol. See [docs/TERRALAB_DATA_REGISTER.md](docs/TERRALAB_DATA_REGISTER.md) for the initial geospatial extract, substation sources and Telangana expansion requirements. See [docs/METHODOLOGY.md](docs/METHODOLOGY.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/CARBON_MRV_FRAMEWORK.md](docs/CARBON_MRV_FRAMEWORK.md).
 
 
 ## PostGIS foundation
