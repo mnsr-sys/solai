@@ -1,203 +1,234 @@
 from __future__ import annotations
 
+import csv
+import io
 from datetime import datetime, timezone
 from typing import Literal
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
-StateCode = Literal["Telangana", "Karnataka"]
-
-STATE_CONFIG = {
-    "Telangana": {
-        "code": "TS",
-        "priority": 1,
-        "pilot_status": "primary-demo-state",
-        "districts": [
-            "Hyderabad", "Medchal-Malkajgiri", "Rangareddy", "Sangareddy",
-            "Yadadri Bhuvanagiri", "Warangal", "Karimnagar", "Nalgonda",
-        ],
-        "data_notice": "District list is an initial demo selector, not a verified inventory of substations or candidate parcels.",
-    },
-    "Karnataka": {
-        "code": "KA",
-        "priority": 2,
-        "pilot_status": "next-expansion-state",
-        "districts": [
-            "Bengaluru Urban", "Bengaluru Rural", "Mysuru", "Tumakuru",
-            "Belagavi", "Dharwad", "Kalaburagi", "Dakshina Kannada",
-        ],
-        "data_notice": "District list is an initial demo selector, not a verified inventory of substations or candidate parcels.",
-    },
-}
+DISTRICTS = [
+    "Adilabad", "Bhadradri Kothagudem", "Hanamkonda", "Hyderabad",
+    "Jagtial", "Jangaon", "Jayashankar Bhupalpally", "Jogulamba Gadwal",
+    "Kamareddy", "Karimnagar", "Khammam", "Kumuram Bheem Asifabad",
+    "Mahabubabad", "Mahabubnagar", "Mancherial", "Medak",
+    "Medchal-Malkajgiri", "Mulugu", "Nagarkurnool", "Nalgonda",
+    "Narayanpet", "Nirmal", "Nizamabad", "Peddapalli",
+    "Rajanna Sircilla", "Rangareddy", "Sangareddy", "Siddipet",
+    "Suryapet", "Vikarabad", "Wanaparthy", "Warangal",
+    "Yadadri Bhuvanagiri",
+]
 
 app = FastAPI(
     title="Reker SolAI API",
-    version="0.2.0",
-    description="Multi-state solar substation screening; Telangana is the first implementation priority, followed by Karnataka.",
+    version="1.0.0",
+    description="Telangana solar asset intelligence, generation monitoring and carbon MRV readiness API.",
 )
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://reker-solai.vercel.app", "http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
-METHODOLOGY_VERSION = "screening-v0.2"
+# Demo persistence only. Replace with managed PostgreSQL/PostGIS before production use.
 projects: dict[str, dict] = {}
-
+meter_readings: dict[str, list[dict]] = {}
+audit_events: list[dict] = []
 
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=2, max_length=120)
-    district: str = Field(min_length=2, max_length=80)
-    state: StateCode = "Telangana"
-    data_status: Literal["public", "synthetic", "utility-provided"] = "synthetic"
+    district: str
+    asset_type: Literal["ground-mounted", "rooftop", "floating", "hybrid"] = "ground-mounted"
+    capacity_mw: float = Field(gt=0, le=10000)
+    latitude: float = Field(ge=15.0, le=20.5)
+    longitude: float = Field(ge=77.0, le=82.0)
+    substation_name: str | None = Field(default=None, max_length=160)
+    owner: str | None = Field(default=None, max_length=160)
+    commissioning_date: str | None = None
+    data_status: Literal["synthetic", "owner-provided", "utility-provided"] = "synthetic"
 
+class MeterReading(BaseModel):
+    timestamp: datetime
+    energy_mwh: float = Field(ge=0)
+    meter_id: str = Field(min_length=1, max_length=100)
+    reading_type: Literal["generation", "grid-export"] = "generation"
+    source: str = Field(default="manual-upload", max_length=100)
 
-class SiteFeatures(BaseModel):
-    site_id: str = Field(min_length=1, max_length=80)
-    label: str = Field(min_length=1, max_length=120)
-    usable_area_m2: float = Field(ge=0)
-    land_availability: float = Field(ge=0, le=100, description="0-100 suitability score")
-    shading: float = Field(ge=0, le=100, description="0-100; higher means less shading")
-    slope: float = Field(ge=0, le=100, description="0-100; higher means more suitable slope")
-    flood_safety: float = Field(ge=0, le=100, description="0-100; higher means lower flood risk")
-    grid_proximity: float = Field(ge=0, le=100, description="0-100 proximity screening score")
-    data_status: Literal["public", "synthetic", "utility-provided"] = "synthetic"
+class MeterBatch(BaseModel):
+    readings: list[MeterReading] = Field(min_length=1, max_length=50000)
 
+class MRVRequest(BaseModel):
+    grid_emission_factor_tco2e_per_mwh: float = Field(gt=0, le=2)
+    factor_source: str = Field(min_length=3, max_length=300)
+    factor_vintage: str = Field(min_length=4, max_length=20)
+    project_emissions_tco2e: float = Field(default=0, ge=0)
+    leakage_tco2e: float = Field(default=0, ge=0)
+    eligible_energy_basis: Literal["generation", "grid-export"] = "generation"
+    methodology_name: str = Field(default="Indicative grid-displacement screening", max_length=200)
 
-class ScreeningRequest(BaseModel):
-    state: StateCode = "Telangana"
-    district: str = Field(default="Hyderabad", min_length=2, max_length=80)
-    sites: list[SiteFeatures] = Field(min_length=1, max_length=500)
-    weights: dict[str, float] | None = None
-
-    @model_validator(mode="after")
-    def validate_weights(self):
-        if self.weights is not None:
-            required = {"land_availability", "shading", "slope", "flood_safety", "grid_proximity"}
-            if set(self.weights) != required:
-                raise ValueError(f"Weights must contain exactly: {sorted(required)}")
-            if any(v < 0 for v in self.weights.values()) or sum(self.weights.values()) <= 0:
-                raise ValueError("Weights must be non-negative and sum to a positive value")
-        return self
-
-
-class SolarEstimateRequest(BaseModel):
-    usable_area_m2: float = Field(gt=0)
-    installed_density_w_per_m2: float = Field(default=200, gt=0, le=400)
-    specific_yield_mwh_per_mw_year: float = Field(default=1500, gt=0, le=3000)
-    grid_emission_factor_tco2e_per_mwh: float = Field(gt=0, le=2, description="User-supplied, sourced factor")
-
-
-DEFAULT_WEIGHTS = {
-    "land_availability": 0.30,
-    "shading": 0.20,
-    "slope": 0.15,
-    "flood_safety": 0.20,
-    "grid_proximity": 0.15,
-}
-
+def log_event(entity_type: str, entity_id: str, action: str, details: dict):
+    audit_events.append({
+        "event_id": str(uuid4()), "entity_type": entity_type, "entity_id": entity_id,
+        "action": action, "details": details,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    })
 
 @app.get("/")
 def root():
-    return {"product": "Reker SolAI", "version": app.version, "status": "prototype"}
-
+    return {"product": "Reker SolAI", "version": app.version, "status": "demo-ready", "geography": "Telangana"}
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
-
+    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat(), "geography": "Telangana"}
 
 @app.get("/api/v1/states")
 def list_states():
     return {
-        "priority_order": ["Telangana", "Karnataka"],
         "default_state": "Telangana",
-        "states": STATE_CONFIG,
-        "notice": "State and district selectors are geographic scaffolding. They do not imply verified substation or land datasets.",
+        "states": {"Telangana": {"code": "TS", "districts": DISTRICTS}},
+        "notice": "Telangana-only build. Districts are administrative selectors, not proof of asset or utility coverage.",
     }
 
+@app.get("/api/v1/dashboard")
+def dashboard():
+    readings = [r for rows in meter_readings.values() for r in rows]
+    generation = sum(r["energy_mwh"] for r in readings if r["reading_type"] == "generation")
+    exports = sum(r["energy_mwh"] for r in readings if r["reading_type"] == "grid-export")
+    return {
+        "geography": "Telangana", "projects_registered": len(projects),
+        "meter_records": len(readings), "generation_mwh": round(generation, 3),
+        "grid_export_mwh": round(exports, 3),
+        "estimated_avoided_emissions_tco2e": None,
+        "data_notice": "Only uploaded records in this running demo instance are counted. No live utility feed is connected.",
+    }
 
 @app.post("/api/v1/projects", status_code=201)
 def create_project(payload: ProjectCreate):
-    if payload.district not in STATE_CONFIG[payload.state]["districts"]:
-        raise HTTPException(status_code=422, detail=f"District is not in the current {payload.state} demo selector.")
+    if payload.district not in DISTRICTS:
+        raise HTTPException(status_code=422, detail="District must be in Telangana.")
     project_id = str(uuid4())
     record = {
-        "project_id": project_id,
-        **payload.model_dump(),
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "status": "screening",
-        "methodology_version": METHODOLOGY_VERSION,
+        "project_id": project_id, **payload.model_dump(),
+        "state": "Telangana", "created_at": datetime.now(timezone.utc).isoformat(),
+        "status": "registered-unverified", "mrv_status": "meter-data-pending",
     }
     projects[project_id] = record
+    meter_readings[project_id] = []
+    log_event("project", project_id, "project-registered", {"data_status": payload.data_status})
     return record
-
 
 @app.get("/api/v1/projects")
 def list_projects():
     return list(projects.values())
 
-
 @app.get("/api/v1/projects/{project_id}")
 def get_project(project_id: str):
     if project_id not in projects:
         raise HTTPException(status_code=404, detail="Project not found")
-    return projects[project_id]
+    return {**projects[project_id], "meter_record_count": len(meter_readings.get(project_id, []))}
 
+@app.post("/api/v1/projects/{project_id}/meter-readings")
+def add_meter_readings(project_id: str, payload: MeterBatch):
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    existing = meter_readings[project_id]
+    known = {(r["timestamp"], r["meter_id"], r["reading_type"]) for r in existing}
+    accepted, duplicates = [], 0
+    for item in payload.readings:
+        row = item.model_dump()
+        row["timestamp"] = row["timestamp"].isoformat()
+        key = (row["timestamp"], row["meter_id"], row["reading_type"])
+        if key in known:
+            duplicates += 1
+            continue
+        known.add(key)
+        accepted.append(row)
+    existing.extend(accepted)
+    projects[project_id]["mrv_status"] = "meter-data-uploaded"
+    log_event("project", project_id, "meter-data-ingested", {"accepted": len(accepted), "duplicates": duplicates})
+    return {"project_id": project_id, "accepted": len(accepted), "duplicates_skipped": duplicates,
+            "total_records": len(existing), "status": "uploaded-not-yet-verified"}
 
-@app.post("/api/v1/sites/score")
-def score_sites(payload: ScreeningRequest):
-    if payload.district not in STATE_CONFIG[payload.state]["districts"]:
-        raise HTTPException(status_code=422, detail=f"District is not in the current {payload.state} demo selector.")
-    weights = payload.weights or DEFAULT_WEIGHTS
-    total_weight = sum(weights.values())
-    normalized = {key: value / total_weight for key, value in weights.items()}
-    results = []
-    for site in payload.sites:
-        features = site.model_dump()
-        score = sum(features[key] * normalized[key] for key in normalized)
-        results.append({
-            **features,
-            "suitability_score": round(score, 2),
-            "screening_band": "High" if score >= 75 else "Medium" if score >= 50 else "Low",
-            "methodology_version": METHODOLOGY_VERSION,
-            "validation_status": "not-utility-validated",
-            "limitations": [
-                "Screening score is not an engineering approval.",
-                "Grid proximity does not establish electrical hosting capacity.",
-            ],
-        })
-    results.sort(key=lambda item: item["suitability_score"], reverse=True)
-    return {
-        "state": payload.state,
-        "district": payload.district,
-        "methodology_version": METHODOLOGY_VERSION,
-        "weights": normalized,
-        "ranked_sites": results,
-        "notice": "Scores are indicative screening results. Validate source data and site conditions with the utility.",
-    }
+@app.post("/api/v1/projects/{project_id}/meter-csv")
+async def upload_meter_csv(project_id: str, file: UploadFile = File(...)):
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=415, detail="Upload a CSV file.")
+    raw = (await file.read()).decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(raw))
+    required = {"timestamp", "energy_mwh", "meter_id"}
+    if not reader.fieldnames or not required.issubset(set(reader.fieldnames)):
+        raise HTTPException(status_code=422, detail="CSV columns required: timestamp,energy_mwh,meter_id; optional: reading_type,source")
+    rows = []
+    for line, row in enumerate(reader, start=2):
+        try:
+            rows.append(MeterReading(
+                timestamp=datetime.fromisoformat(row["timestamp"].replace("Z", "+00:00")),
+                energy_mwh=float(row["energy_mwh"]), meter_id=row["meter_id"],
+                reading_type=row.get("reading_type") or "generation",
+                source=row.get("source") or file.filename,
+            ))
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"Invalid CSV row {line}: {exc}") from exc
+    return add_meter_readings(project_id, MeterBatch(readings=rows))
 
+@app.get("/api/v1/projects/{project_id}/meter-readings")
+def get_meter_readings(project_id: str):
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    rows = meter_readings.get(project_id, [])
+    return {"project_id": project_id, "count": len(rows), "readings": rows}
 
-@app.post("/api/v1/solar/estimate")
-def estimate_solar(payload: SolarEstimateRequest):
-    capacity_mw_dc = payload.usable_area_m2 * payload.installed_density_w_per_m2 / 1_000_000
-    annual_generation_mwh = capacity_mw_dc * payload.specific_yield_mwh_per_mw_year
-    avoided_tco2e = annual_generation_mwh * payload.grid_emission_factor_tco2e_per_mwh
-    return {
-        "usable_area_m2": payload.usable_area_m2,
-        "installed_density_w_per_m2": payload.installed_density_w_per_m2,
-        "estimated_capacity_mw_dc": round(capacity_mw_dc, 4),
-        "specific_yield_mwh_per_mw_year": payload.specific_yield_mwh_per_mw_year,
-        "estimated_annual_generation_mwh": round(annual_generation_mwh, 2),
+@app.post("/api/v1/projects/{project_id}/mrv")
+def calculate_mrv(project_id: str, payload: MRVRequest):
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    rows = meter_readings.get(project_id, [])
+    eligible = sum(r["energy_mwh"] for r in rows if r["reading_type"] == payload.eligible_energy_basis)
+    baseline = eligible * payload.grid_emission_factor_tco2e_per_mwh
+    net = max(0.0, baseline - payload.project_emissions_tco2e - payload.leakage_tco2e)
+    result = {
+        "project_id": project_id, "methodology_name": payload.methodology_name,
+        "eligible_energy_basis": payload.eligible_energy_basis, "eligible_energy_mwh": round(eligible, 6),
         "grid_emission_factor_tco2e_per_mwh": payload.grid_emission_factor_tco2e_per_mwh,
-        "estimated_avoided_emissions_tco2e_per_year": round(avoided_tco2e, 2),
-        "methodology_version": METHODOLOGY_VERSION,
-        "validation_status": "indicative-not-verified",
-        "notice": "Supply a documented grid factor. Estimates are not verified carbon credits or utility approvals.",
+        "factor_source": payload.factor_source, "factor_vintage": payload.factor_vintage,
+        "baseline_emissions_tco2e": round(baseline, 6),
+        "project_emissions_tco2e": payload.project_emissions_tco2e,
+        "leakage_tco2e": payload.leakage_tco2e, "indicative_net_avoided_emissions_tco2e": round(net, 6),
+        "status": "indicative-estimate-not-verified",
+        "credit_issuance_status": "not-assessed-no-credits-issued",
+        "limitations": [
+            "This is an indicative calculation, not a methodology-approved credit calculation.",
+            "Meter readings are user-uploaded and have not been independently verified.",
+            "Additionality, ownership, regulatory surplus, leakage, safeguards and double counting have not been assessed.",
+            "A substation association does not prove grid connection or eligible electricity delivery.",
+        ],
+    }
+    projects[project_id]["mrv_status"] = "indicative-estimate-created"
+    log_event("project", project_id, "indicative-mrv-calculated", {"factor_source": payload.factor_source, "energy_mwh": round(eligible, 6)})
+    return result
+
+@app.get("/api/v1/projects/{project_id}/audit")
+def project_audit(project_id: str):
+    if project_id not in projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return [e for e in audit_events if e["entity_id"] == project_id]
+
+@app.get("/api/v1/map/layers")
+def map_layers():
+    return {
+        "state": "Telangana",
+        "substations": {
+            "provider": "TGRAC public ArcGIS service",
+            "url": "https://tgrac.telangana.gov.in/arcgis/rest/services/RRR_Folder/RRR/MapServer/8",
+            "status": "external-live-layer-not-utility-verified",
+        },
+        "basemap": "OpenStreetMap / CARTO",
+        "notice": "Mapped infrastructure is contextual GIS data; confirm asset identity, voltage, operational status and electrical connection with the utility.",
     }
