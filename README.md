@@ -94,3 +94,12 @@ Current demo endpoints:
 - Independent validation and verification, registry approval and issuance are performed by the relevant authorised bodies—not by SolAI.
 
 See [docs/TERRALAB_DATA_REGISTER.md](docs/TERRALAB_DATA_REGISTER.md) for the initial geospatial extract, substation sources and Telangana expansion requirements. See [docs/METHODOLOGY.md](docs/METHODOLOGY.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/CARBON_MRV_FRAMEWORK.md](docs/CARBON_MRV_FRAMEWORK.md).
+
+
+## PostGIS foundation
+
+The initial durable spatial schema and controlled GIS ingestion procedure are now in:
+- [PostGIS migration](database/migrations/001_postgis_foundation.sql)
+- [PostGIS setup and ingestion guide](docs/POSTGIS_SETUP.md)
+
+The migration is ready to apply to a managed PostgreSQL/PostGIS instance. The current hosted API still uses in-memory demo persistence until a database provider is selected, credentials are configured, and the imported layers are validated. Do not treat the new SQL schema as a live database connection.
