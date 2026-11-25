@@ -1,0 +1,3 @@
+# GIS ingestion tooling (separate from the lightweight Vercel API runtime)
+# Install GDAL/OGR from your operating system package manager.
+psycopg[binary]>=3.2,<4
