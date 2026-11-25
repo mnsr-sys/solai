@@ -61,6 +61,22 @@ uvicorn backend.main:app --reload
 
 Open http://127.0.0.1:8000/docs for API documentation.
 
+## Working demo
+
+The dashboard is served from `frontend/dashboard/index.html`. It includes the Telangana map, project registration, meter CSV upload, indicative MRV calculation and project audit view. The API endpoints are documented at `/docs` when the FastAPI service is running.
+
+Current demo endpoints:
+- `GET /api/v1/dashboard`
+- `GET/POST /api/v1/projects`
+- `POST /api/v1/projects/{project_id}/meter-readings`
+- `POST /api/v1/projects/{project_id}/meter-csv`
+- `GET /api/v1/projects/{project_id}/meter-readings`
+- `POST /api/v1/projects/{project_id}/mrv`
+- `GET /api/v1/projects/{project_id}/audit`
+- `GET /api/v1/map/layers`
+
+**Demo limitation:** current project and meter records are held in application memory. They are not durable across restarts or serverless instances. Connect managed PostgreSQL/PostGIS, authentication, backups and access controls before production onboarding. The public GIS substation layer is an external contextual source and must be validated with the relevant utility.
+
 ## Carbon accounting and claims boundaries
 
 - Renewable generation is not itself proof that carbon credits can be issued.
