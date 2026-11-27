@@ -92,7 +92,7 @@ class ProjectCreate(BaseModel):
     substation_name: str | None = Field(default=None, max_length=160)
     owner: str | None = Field(default=None, max_length=160)
     commissioning_date: str | None = None
-    data_status: Literal["synthetic", "owner-provided", "utility-provided"] = "synthetic"
+    data_status: Literal["synthetic", "public", "owner-provided", "utility-provided"] = "synthetic"
 
 class MeterReading(BaseModel):
     timestamp: datetime
