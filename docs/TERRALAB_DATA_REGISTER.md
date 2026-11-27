@@ -36,7 +36,7 @@ Required notice: Produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and
 
 Two distinct sources/approaches must remain visible in SolAI:
 
-1. **TGRAC public ArcGIS electric-transmission substation layer.** The interactive map queries the published RRR electric-transmission substation service:
+1. **TGRAC public ArcGIS electric-transmission substation layer.** The dashboard fetches all object IDs exposed by the published RRR electric-transmission `Sub Stations` layer (MapServer layer 8), then retrieves features in batches. This layer belongs to the Regional Ring Road (RRR) service and is corridor/project-context coverage—not a certified statewide inventory of every Telangana substation. The interactive map queries:
    `https://tgrac.telangana.gov.in/arcgis/rest/services/RRR_Folder/RRR/MapServer/8`
    The dashboard displays its mapped point records and published attributes. This is a public GIS reference, not a certified exhaustive TSTRANSCO/DISCOM inventory.
 2. **Earlier 20 km Hyderabad-area OSM power-feature extract.** This extract contains 2,889 mapped power features. It is useful as a secondary discovery layer, but is not a verified/exhaustive TSTRANSCO inventory and does not establish voltage, operational status, feeder connectivity or hosting capacity.

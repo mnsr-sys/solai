@@ -67,21 +67,37 @@ uvicorn backend.main:app --reload
 
 Open http://127.0.0.1:8000/docs for API documentation.
 
-## Working demo
+## Working demo — single dashboard and same-origin API
 
-The dashboard is served from `frontend/dashboard/index.html`. It includes the Telangana map, project registration, meter CSV upload, indicative MRV calculation and project audit view. The API endpoints are documented at `/docs` when the FastAPI service is running.
+The user-facing application is one Vercel project: **REKER SolAI**. The dashboard is served from `frontend/dashboard/index.html`; the root `vercel.json` routes `/api/*` to the FastAPI entrypoint at `api/index.py`. The browser calls the API on the same origin. Users should open the dashboard URL only; the separate API Vercel project is not a second user interface.
 
-Current demo endpoints:
+The dashboard follows one guided workflow:
+
+1. **Select geography and site:** choose a Telangana district, inspect the map, click a location to set candidate coordinates, and view distinct map symbols for public TGRAC substations, SolAI projects, selected candidate and context GIS layers.
+2. **Enter site evidence:** provide usable area and the five screening inputs (land availability, low shading, slope suitability, flood safety and grid proximity), identify the evidence class, and record source notes.
+3. **Assess and generate report:** calculate a weighted preliminary screening score; retrieve NASA POWER resource data; estimate planning-stage capacity/yield; print/save a site screening report or download the assessment JSON.
+4. **Register project and track MRV:** create a project record, upload generation/export meter CSV, calculate an indicative emissions result using a supplied factor, and inspect the project audit events and MRV milestones.
+
+Current demo endpoints include:
+
+- `GET /health`
 - `GET /api/v1/dashboard`
 - `GET/POST /api/v1/projects`
 - `POST /api/v1/projects/{project_id}/meter-readings`
 - `POST /api/v1/projects/{project_id}/meter-csv`
 - `GET /api/v1/projects/{project_id}/meter-readings`
-- `POST /api/v1/sites/score`\n- `POST /api/v1/solar/potential`\n- `POST /api/v1/projects/{project_id}/mrv`
+- `POST /api/v1/sites/score`
+- `GET /api/v1/solar/resource`
+- `POST /api/v1/solar/potential`
+- `POST /api/v1/projects/{project_id}/mrv`
 - `GET /api/v1/projects/{project_id}/audit`
 - `GET /api/v1/map/layers`
+- `GET /api/v1/map/substations`
+- `GET /api/v1/spatial/health`
+- `GET /api/v1/spatial/layers`
+- `GET /api/v1/spatial/nearby`
 
-**Demo limitation:** current project and meter records are held in application memory. They are not durable across restarts or serverless instances. Connect managed PostgreSQL/PostGIS, authentication, backups and access controls before production onboarding. The public GIS substation layer is an external contextual source and must be validated with the relevant utility.
+**Important demo limitations:** project and meter records remain in application memory, not durable storage across restarts/serverless instances. The public TGRAC GIS layer is contextual, not utility-verified. Candidate scoring uses supplied factor values and is a screening aid, not automated parcel/title approval. NASA POWER is gridded resource context, not an on-site measurement or bankable PV simulation. Meter uploads are not independently verified. The MRV result is indicative; the prototype does not independently verify reductions or issue carbon credits. Connect managed PostgreSQL/PostGIS, authentication, secure evidence storage, backups and authorised utility/project data before production onboarding.
 
 ## Carbon accounting and claims boundaries
 
@@ -93,12 +109,12 @@ Current demo endpoints:
 - SolAI must label estimated reductions, methodology-screened potential, validated reductions and issued credits as distinct statuses.
 - Independent validation and verification, registry approval and issuance are performed by the relevant authorised bodies—not by SolAI.
 
-See [docs/TERRALAB_DATA_REGISTER.md](docs/TERRALAB_DATA_REGISTER.md) for the initial geospatial extract, substation sources and Telangana expansion requirements. See [docs/METHODOLOGY.md](docs/METHODOLOGY.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/CARBON_MRV_FRAMEWORK.md](docs/CARBON_MRV_FRAMEWORK.md).
-
+See [docs/CASE_STUDY_HYDERABAD.md](docs/CASE_STUDY_HYDERABAD.md) for the first end-to-end site-screening demo protocol. See [docs/TERRALAB_DATA_REGISTER.md](docs/TERRALAB_DATA_REGISTER.md) for the initial geospatial extract, substation sources and Telangana expansion requirements. See [docs/METHODOLOGY.md](docs/METHODOLOGY.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/CARBON_MRV_FRAMEWORK.md](docs/CARBON_MRV_FRAMEWORK.md).
 
 ## PostGIS foundation
 
-The initial durable spatial schema and controlled GIS ingestion procedure are now in:
+The initial durable spatial schema and controlled GIS ingestion procedure are in:
+
 - [PostGIS migration](database/migrations/001_postgis_foundation.sql)
 - [PostGIS setup and ingestion guide](docs/POSTGIS_SETUP.md)
 
